@@ -1,0 +1,118 @@
+# Circuit Lab releases.
+#
+# Every push to main is checked: type check, build and every test.
+# When the "version" in package.json is new (it has no vX.Y.Z tag yet), the
+# same run also tags the commit, publishes a GitHub release with the changes
+# since the last one, and puts the new build live at https://circuitlab.app.
+# "Run workflow" in the Actions tab republishes the current build by hand.
+name: Check, release and publish
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# one run at a time; a newer push waits instead of cancelling a live one
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  check:
+    name: Check and build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      new: ${{ steps.version.outputs.new }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # all tags, to tell whether this version was released before
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # type check + production build (see "build" in package.json)
+      - run: npm run build
+
+      - name: Test the circuit solver and every example
+        run: npm test
+
+      - name: Is this a new version?
+        id: version
+        run: |
+          version=$(node -p "require('./package.json').version")
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if git rev-parse -q --verify "refs/tags/v$version" >/dev/null; then
+            echo "new=false" >> "$GITHUB_OUTPUT"
+            echo "v$version is already released: checked only, nothing published." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "new=true" >> "$GITHUB_OUTPUT"
+            echo "New version v$version: releasing and publishing." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Prepare the site
+        if: steps.version.outputs.new == 'true' || github.event_name == 'workflow_dispatch'
+        # the app has a single page: any unknown address opens it too
+        run: cp dist/index.html dist/404.html
+
+      - if: steps.version.outputs.new == 'true' || github.event_name == 'workflow_dispatch'
+        uses: actions/configure-pages@v6
+
+      - if: steps.version.outputs.new == 'true' || github.event_name == 'workflow_dispatch'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  release:
+    name: GitHub release
+    needs: check
+    if: needs.check.outputs.new == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Tag and publish v${{ needs.check.outputs.version }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: v${{ needs.check.outputs.version }}
+        run: |
+          previous=$(git describe --tags --abbrev=0 2>/dev/null || true)
+          {
+            if [ -n "$previous" ]; then
+              echo "## What's new since $previous"
+              echo
+              git log --no-merges --pretty='- %s' "$previous..HEAD"
+            else
+              echo "The first public release of Circuit Lab: a circuit simulator for kids in English, Persian and Arabic."
+            fi
+            echo
+            echo "Live at https://circuitlab.app"
+          } > notes.md
+          gh release create "$VERSION" --target "$GITHUB_SHA" --title "Circuit Lab $VERSION" --notes-file notes.md
+
+  publish:
+    name: Publish to circuitlab.app
+    needs: check
+    if: needs.check.outputs.new == 'true' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
