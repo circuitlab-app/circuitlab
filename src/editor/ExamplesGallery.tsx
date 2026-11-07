@@ -52,6 +52,10 @@ const SHELVES: Record<PresetCategory, { accent: string; art: PartType }> = {
   games: { accent: '#c026d3', art: 'button' },
   ai: { accent: '#6d5bd0', art: 'aiBoard' },
   screens: { accent: '#db2777', art: 'segment' },
+  iot: { accent: '#2563eb', art: 'wifi' },
+  car: { accent: '#dc2626', art: 'ecu' },
+  factory: { accent: '#0d9488', art: 'plc' },
+  oil: { accent: '#ea580c', art: 'rtu' },
 }
 
 /** The LED drawing is red; these filters turn it into the other colours. */

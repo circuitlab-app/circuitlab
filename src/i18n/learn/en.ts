@@ -931,5 +931,104 @@ export const enLearn: LearnBook = {
       like: 'It is like a doctor listening to a heartbeat with a stethoscope.',
       fact: 'Before computers were small, engineers used logic probes to hunt for faults in machines as big as a room.',
     },
+    ecu: {
+      about: [
+        'An ECU (engine control unit) is the computer that runs a car\'s engine. A modern car has dozens of them: for the engine, the brakes, the airbags and the lights.',
+        'It reads a sensor on AIN, such as the engine\'s temperature, and drives fans, pumps and lights from OUT1 to OUT6. OUT1, OUT2 and OUT3 can also run things at part speed (PWM).',
+        'A car runs on 12 V, but the ECU gives its sensors a steady 5 V on its 5V pin. Each output gives only a little current: use a resistor with an LED, and a transistor for a fan or a motor.',
+      ],
+      like: 'It is like the car\'s brain: it feels with its sensors and moves with its outputs, many times every second.',
+      fact: 'An engine ECU can make thousands of decisions every second, such as exactly when to spark each cylinder.',
+    },
+    plc: {
+      about: [
+        'A PLC (programmable logic controller) is the tough computer that runs machines in factories: belts, pumps, presses and robots.',
+        'It reads a sensor on AI0. Its relay outputs Q0 to Q4 just switch on or off, and AQ0 can be set to any level in between.',
+        'Real PLCs work with 24 V and are programmed in special languages such as Structured Text. This one uses 5 V so it is safe with your kit, and the details panel shows its program in Structured Text.',
+      ],
+      like: 'It is like the conductor of an orchestra: it tells every machine in the factory when to start and when to stop.',
+      fact: 'The first PLC was made in 1968 for a car factory, to replace walls of relays that took weeks to rewire for each new car model.',
+    },
+    rtu: {
+      about: [
+        'An RTU (remote terminal unit) watches an oil or gas well far away from any town, often in the desert, and reports back to a control room.',
+        'It reads a sensor on AI1, such as the well\'s pressure, and runs pumps, horns and lights from DO1 to DO4. AO1 and AO2 can be set to any level, to send a reading on to a radio or a gauge.',
+        'RTUs are built to work for years in heat, dust and storms, often powered by a solar panel and a battery. Like a PLC, it is programmed in Structured Text.',
+      ],
+      like: 'It is like a guard who stays at a far-away well day and night, and phones the control room the moment something is wrong.',
+      fact: 'A big oil field can have thousands of wells spread over hundreds of kilometres, and RTUs let a few people watch all of them from one room.',
+    },
+    gsm: {
+      about: [
+        'The SMS module is a mobile phone on a chip. It has a slot for a SIM card and a little spring antenna.',
+        'After you give it power, it needs a few seconds to find the mobile network. Then, each time IN goes HIGH, it sends one text message to the phone number you set.',
+        'A real SMS module needs about 4 V, and short bursts of up to 2 A while it sends, so it needs a strong power supply. Type your own message and number in the details panel.',
+      ],
+      like: 'It is like a little messenger that runs to your phone with a note the moment your sensor finds something.',
+      fact: 'Alarm systems at farms, pumping stations and oil wells use SMS modules, because mobile networks reach places where there is no internet.',
+    },
+    wifi: {
+      about: [
+        'The Wi-Fi module joins a Wi-Fi network, just like your phone or laptop does.',
+        'Once it is online, it sends the volts on IN to the cloud every second, so you can watch the reading on a phone from anywhere in the world.',
+        'It works with 3 V to 5 V and uses a few tens of milliamps. The details panel shows the cloud dashboard with a little chart of what it sent.',
+      ],
+      like: 'It is like a postman who carries a letter from your project to the internet every second.',
+      fact: 'Smart homes, weather stations and factory machines use Wi-Fi modules like this one. This is called the Internet of Things.',
+    },
+    bluetooth: {
+      about: [
+        'The Bluetooth module talks to a phone or a tablet close by, without any wires.',
+        'First it pairs with the phone. Then, twice a second, it sends the volts on IN to an app on the phone.',
+        'Bluetooth reaches about 10 metres and uses very little power, which is why it is used in fitness bands, headphones and toys.',
+      ],
+      like: 'It is like a whisper to a friend standing next to you: quiet, quick and private.',
+      fact: 'Bluetooth is named after Harald Bluetooth, a Viking king who joined the tribes of Denmark together, just as Bluetooth joins devices together.',
+    },
+    lora: {
+      about: [
+        'LoRa (long range) is a radio that sends small messages very far: several kilometres in towns and even more than 10 km in open country.',
+        'Every 2 seconds it sends the volts on IN to a LoRa gateway, which passes them on to the internet.',
+        'It sends only a few bytes at a time, but it uses so little power that a sensor can run for years on one battery. Farms, cities and oil fields use it.',
+      ],
+      like: 'It is like a carrier pigeon: it carries only a tiny note, but it can fly a very long way.',
+      fact: 'LoRa messages have been received hundreds of kilometres away, from radios floating high up on balloons.',
+    },
+    gps: {
+      about: [
+        'The GPS module finds out where it is on Earth by listening to satellites flying high above us.',
+        'It must hear at least four satellites to work out its position. That can take a while, so it is best out in the open sky.',
+        'Once it has a fix, its PPS pin gives a pulse at the start of every second, exact to a millionth of a second. Boards can use it as a perfect clock.',
+      ],
+      like: 'It is like finding where you are by listening to several friends call out from different places at the same time.',
+      fact: 'There are about 30 GPS satellites, more than 20 000 km above us, and each one carries very precise atomic clocks.',
+    },
+    canBus: {
+      about: [
+        'CAN (controller area network) is the network inside a car that joins all its computers: the engine, the brakes, the airbags and the dashboard.',
+        'This module puts the volts on IN onto the CAN bus ten times a second, as one byte in a message with its own ID number.',
+        'The bus needs only two wires, CAN-H and CAN-L, twisted together so that noise from the engine cannot spoil the messages.',
+      ],
+      like: 'It is like a group chat in which every computer in the car can read every message, and each one picks out the messages meant for it.',
+      fact: 'CAN was invented in the 1980s for cars, and now it is also used in trucks, tractors, ships, lifts and even hospital machines.',
+    },
+    rs485: {
+      about: [
+        'RS-485 sends data down a long cable, as far as about 1 km, even in noisy factories full of motors.',
+        'This module writes the volts on IN into Modbus register 40001 four times a second, for the control room to read. Modbus is the language many factory machines speak.',
+        'Up to 32 machines can share one pair of wires, each with its own address, and the control room asks each one in turn.',
+      ],
+      like: 'It is like a long string telephone through the factory, on which the control room calls each machine by its number.',
+      fact: 'Modbus was made in 1979 and it is still one of the most used languages in factories, oil fields and power stations today.',
+    },
+    pressureSensor: {
+      about: [
+        'The pressure sensor measures how hard a liquid or a gas pushes inside a pipe, a tank or a well, from 0 to 200 bar.',
+        'It has a dial so you can read the pressure with your eyes, and its S pin gives a signal that rises with the pressure, for a board to read.',
+        'One bar is about the push of the air around us. The water in a garden hose is about 3 bar, and an oil well can push 200 bar or more.',
+      ],
+      like: 'It is like a tyre gauge that never stops checking, and tells a computer the answer all the time.',
+      fact: 'Oil wells are watched all day by pressure sensors, because a sudden change in pressure can be the first sign of trouble deep underground.',
+    },
   },
 }

@@ -5,7 +5,7 @@ import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { Halo, damp } from '../helpers'
 
-type Variant = 'nano' | 'mega' | 'esp32' | 'esp8266' | 'pico' | 'microbit' | 'raspberrypi'
+type Variant = 'nano' | 'mega' | 'esp32' | 'esp8266' | 'pico' | 'microbit' | 'raspberrypi' | 'ecu' | 'plc' | 'rtu'
 
 /** same lean as the Arduino UNO so every board shares one camera framing */
 const TILT = 0.72
@@ -15,7 +15,27 @@ const TOP = BOARD_T / 2
 const OUTPUTS = 6
 
 type Vec3 = [number, number, number]
-type Mat = 'black' | 'hole' | 'gold' | 'silver' | 'silk' | 'white' | 'tan' | 'dark' | 'red' | 'blue' | 'grey' | 'copper'
+type Mat =
+  | 'black'
+  | 'hole'
+  | 'gold'
+  | 'silver'
+  | 'silk'
+  | 'white'
+  | 'tan'
+  | 'dark'
+  | 'red'
+  | 'blue'
+  | 'grey'
+  | 'copper'
+  | 'terminal'
+  | 'plastic'
+  | 'charcoal'
+  | 'teal'
+  | 'orange'
+  | 'slate'
+  | 'ink'
+  | 'rubber'
 
 /** No environment map here, so big metal faces keep some diffuse colour instead of turning black. */
 const MATERIALS: Record<Mat, { color: string; roughness: number; metalness?: number }> = {
@@ -31,11 +51,25 @@ const MATERIALS: Record<Mat, { color: string; roughness: number; metalness?: num
   blue: { color: '#2563eb', roughness: 0.4 },
   grey: { color: '#8b9099', roughness: 0.5, metalness: 0.3 },
   copper: { color: '#c9a24a', roughness: 0.35, metalness: 0.6 },
+  /** the green of screw terminal blocks */
+  terminal: { color: '#1f9d55', roughness: 0.5 },
+  /** light-grey housing of a DIN-rail module */
+  plastic: { color: '#d5d8dd', roughness: 0.62 },
+  charcoal: { color: '#2b2f36', roughness: 0.6 },
+  teal: { color: '#0d9488', roughness: 0.45 },
+  /** safety orange */
+  orange: { color: '#f06a1d', roughness: 0.55 },
+  /** grey plastic of a connector latch */
+  slate: { color: '#5b6470', roughness: 0.5 },
+  /** the dark print on an LCD */
+  ink: { color: '#0f3b37', roughness: 0.6 },
+  /** the matte black of an antenna */
+  rubber: { color: '#151517', roughness: 0.85 },
 }
 
 type Prim =
   | { kind: 'box'; size: Vec3; at: Vec3; turn: number }
-  | { kind: 'cyl'; r: number; h: number; at: Vec3; axis: 'x' | 'y' | 'z'; half: boolean; turn: number }
+  | { kind: 'cyl'; r: number; h: number; at: Vec3; axis: 'x' | 'y' | 'z'; half: boolean; turn: number; sides: number }
   | { kind: 'ring'; r: number; tube: number; at: Vec3; stretch: number }
 
 /** Collects the small static parts of a board, sorted by material, to merge into one mesh each. */
@@ -55,13 +89,13 @@ class Layout {
     this.box(mat, size, [x, TOP + lift + size[1] / 2, z], turn)
   }
 
-  /** print or a pad flat on the board */
-  flat(mat: Mat, w: number, d: number, x: number, z: number, turn = 0) {
-    this.box(mat, [w, 0.004, d], [x, TOP + 0.002, z], turn)
+  /** print or a pad flat on the board, or `lift` above it on a housing */
+  flat(mat: Mat, w: number, d: number, x: number, z: number, turn = 0, lift = 0) {
+    this.box(mat, [w, 0.004, d], [x, TOP + lift + 0.002, z], turn)
   }
 
-  cyl(mat: Mat, r: number, h: number, at: Vec3, axis: 'x' | 'y' | 'z' = 'y', half = false, turn = 0) {
-    this.add(mat, { kind: 'cyl', r, h, at, axis, half, turn })
+  cyl(mat: Mat, r: number, h: number, at: Vec3, axis: 'x' | 'y' | 'z' = 'y', half = false, turn = 0, sides = 18) {
+    this.add(mat, { kind: 'cyl', r, h, at, axis, half, turn, sides })
   }
 
   /** a thin ring lying on the board */
@@ -73,7 +107,7 @@ class Layout {
 function primGeometry(p: Prim): THREE.BufferGeometry {
   if (p.kind === 'box') return new THREE.BoxGeometry(...p.size).rotateY(p.turn).translate(...p.at)
   if (p.kind === 'cyl') {
-    const g = new THREE.CylinderGeometry(p.r, p.r, p.h, 18, 1, false, 0, p.half ? Math.PI : Math.PI * 2).rotateY(p.turn)
+    const g = new THREE.CylinderGeometry(p.r, p.r, p.h, p.sides, 1, false, 0, p.half ? Math.PI : Math.PI * 2).rotateY(p.turn)
     if (p.axis === 'x') g.rotateZ(Math.PI / 2)
     if (p.axis === 'z') g.rotateX(Math.PI / 2)
     return g.translate(...p.at)
@@ -216,9 +250,10 @@ function meanderX(L: Layout, x0: number, x1: number, z0: number, runs: number, s
 }
 
 /* seven-segment digits and a few letters, printed flat; "up" is −z */
-const SEGMENTS: Record<string, string> = { '0': 'abcdef', '1': 'bc', '2': 'abged', '3': 'abgcd' }
+const SEGMENTS: Record<string, string> = { '0': 'abcdef', '1': 'bc', '2': 'abged', '3': 'abgcd', E: 'adefg', C: 'adef', U: 'bcdef', P: 'abefg', L: 'def' }
 
-function glyph(L: Layout, ch: string, x: number, z: number, h = 0.13, s = 0.022) {
+function glyph(L: Layout, ch: string, x: number, z: number, h = 0.13, s = 0.022, lift = 0) {
+  const flat = (mat: Mat, w: number, d: number, fx: number, fz: number, turn = 0) => L.flat(mat, w, d, fx, fz, turn, lift)
   const w = h * 0.55
   const half = h / 2
   const seg: Record<string, [number, number, boolean]> = {
@@ -234,28 +269,28 @@ function glyph(L: Layout, ch: string, x: number, z: number, h = 0.13, s = 0.022)
   const stroke = Math.hypot(w / 2, h)
   switch (ch) {
     case 'A':
-      L.flat('silk', s, stroke, x - w / 4, z, -lean)
-      L.flat('silk', s, stroke, x + w / 4, z, lean)
-      L.flat('silk', w * 0.5, s, x, z + h * 0.12)
+      flat('silk', s, stroke, x - w / 4, z, -lean)
+      flat('silk', s, stroke, x + w / 4, z, lean)
+      flat('silk', w * 0.5, s, x, z + h * 0.12)
       return
     case 'V':
-      L.flat('silk', s, stroke, x - w / 4, z, lean)
-      L.flat('silk', s, stroke, x + w / 4, z, -lean)
+      flat('silk', s, stroke, x - w / 4, z, lean)
+      flat('silk', s, stroke, x + w / 4, z, -lean)
       return
     case 'B':
-      L.flat('silk', s, h, x - w / 2, z)
-      for (const dz of [-half, half]) L.flat('silk', w * 0.75, s, x - w * 0.125, z + dz)
-      L.flat('silk', w * 0.6, s, x - w * 0.2, z)
-      for (const dz of [-half / 2, half / 2]) L.flat('silk', s, half * 0.8, x + w * 0.3, z + dz)
+      flat('silk', s, h, x - w / 2, z)
+      for (const dz of [-half, half]) flat('silk', w * 0.75, s, x - w * 0.125, z + dz)
+      flat('silk', w * 0.6, s, x - w * 0.2, z)
+      for (const dz of [-half / 2, half / 2]) flat('silk', s, half * 0.8, x + w * 0.3, z + dz)
       return
     case 'GND':
-      L.flat('silk', s, h * 0.45, x, z - h * 0.3)
-      ;[0.16, 0.1, 0.045].forEach((bw, i) => L.flat('silk', bw, s, x, z + i * 0.04))
+      flat('silk', s, h * 0.45, x, z - h * 0.3)
+      ;[0.16, 0.1, 0.045].forEach((bw, i) => flat('silk', bw, s, x, z + i * 0.04))
       return
   }
   for (const k of SEGMENTS[ch] ?? '') {
     const [sx, sz, across] = seg[k]
-    L.flat('silk', across ? w : s, across ? s : half, sx, sz)
+    flat('silk', across ? w : s, across ? s : half, sx, sz)
   }
 }
 
@@ -269,6 +304,12 @@ type Spec = {
   ledSize: [number, number]
   power: [number, number]
   powerColor: string
+  /** lit and unlit colour of the six output LEDs; amber when left out */
+  ledColor?: [string, string]
+  /** how far above the PCB the LEDs stand (on top of a housing) */
+  deck?: number
+  /** a backlit screen that comes on with the power: centre, size, height above the PCB */
+  screen?: { x: number; z: number; w: number; d: number; y: number; color: string; glow: string }
   /** micro:bit 5 × 5 LED grid */
   matrix?: { x: number; z: number; pitch: number }
   /** x move that centres the board with everything sticking out of it */
@@ -618,12 +659,245 @@ function raspberrypi(): Spec {
   }
 }
 
-const SPECS: Record<Variant, () => Spec> = { nano, mega, esp32, esp8266, pico, microbit, raspberrypi }
+/* ------------------------------------------------- the industrial boards */
+
+/** green screw terminal block along x: `n` ways, the wire openings facing `sign` along z */
+function screwTerminals(L: Layout, x0: number, z: number, n: number, pitch: number, sign: 1 | -1, h = 0.2, d = 0.3, lift = 0) {
+  L.top('terminal', [n * pitch - 0.01, h, d], x0 + (n * pitch) / 2, z, 0, lift)
+  const y = TOP + lift + h
+  for (let i = 0; i < n; i++) {
+    const x = x0 + pitch / 2 + i * pitch
+    const sz = z - sign * d * 0.12
+    // the screw in its well, with its slot
+    L.cyl('hole', pitch * 0.36, 0.006, [x, y + 0.002, sz])
+    L.cyl('silver', pitch * 0.28, 0.02, [x, y + 0.008, sz])
+    L.box('dark', [pitch * 0.42, 0.006, pitch * 0.07], [x, y + 0.019, sz], 0.7)
+    // the square mouth the wire goes into
+    L.box('hole', [pitch * 0.56, h * 0.36, 0.008], [x, TOP + lift + h * 0.38, z + sign * (d / 2 + 0.004)])
+    // ribs between the ways
+    if (i > 0) L.box('terminal', [0.016, 0.03, d * 0.9], [x - pitch / 2, y + 0.015, z])
+  }
+}
+
+/** DPAK power transistor: black body, two legs at the front, the wide silver tab soldered behind it */
+function dpak(L: Layout, x: number, z: number) {
+  L.top('silver', [0.26, 0.016, 0.16], x, z - 0.12)
+  L.top('black', [0.25, 0.075, 0.22], x, z)
+  for (const dx of [-0.075, 0.075]) L.top('silver', [0.035, 0.016, 0.1], x + dx, z + 0.15)
+}
+
+/** a car's engine computer (ECU), opened up */
+function ecu(): Spec {
+  const L = new Layout()
+  // the big automotive connector along the front edge: two pin fields facing out
+  const C = { x: -0.3, z: 0.64, w: 2.5, d: 0.46, h: 0.3 }
+  const face = C.z + C.d / 2
+  L.top('black', [C.w, C.h, C.d], C.x, C.z)
+  for (const fx of [-0.63, 0.63]) {
+    L.box('hole', [1.08, C.h * 0.64, 0.008], [C.x + fx, TOP + C.h * 0.48, face + 0.004])
+    for (let r = 0; r < 3; r++) {
+      for (let c = 0; c < 11; c++) {
+        L.box('gold', [0.034, 0.034, 0.008], [C.x + fx + (c - 5) * 0.09, TOP + C.h * 0.48 + (r - 1) * 0.058, face + 0.009])
+      }
+    }
+  }
+  // coding ribs on top and the locking towers at both ends
+  for (const dx of [-0.95, -0.3, 0.3, 0.95]) L.top('dark', [0.05, 0.02, C.d * 0.7], C.x + dx, C.z + 0.02, 0, C.h)
+  for (const side of [-1, 1]) L.top('black', [0.14, C.h + 0.06, 0.3], C.x + side * (C.w / 2 + 0.05), C.z + 0.02)
+  // the latch lever: a U lying over the top, pivoting on the end towers
+  L.top('slate', [C.w + 0.06, 0.04, 0.08], C.x, C.z + 0.17, 0, C.h + 0.03)
+  for (const side of [-1, 1]) {
+    L.top('slate', [0.05, 0.04, 0.36], C.x + side * (C.w / 2 + 0.03), C.z + 0.02, 0, C.h + 0.03)
+    L.cyl('silver', 0.04, 0.06, [C.x + side * (C.w / 2 + 0.1), TOP + C.h - 0.04, C.z - 0.05], 'x')
+  }
+  // the microcontroller (QFP), its crystal, the CAN transceiver
+  chip(L, -0.15, -0.2, 0.62, 0.62, 16, 4)
+  L.cyl('grey', 0.035, 0.004, [-0.37, TOP + 0.052, -0.42])
+  L.top('black', [0.3, 0.02, 0.14], 0.42, -0.5)
+  L.top('silver', [0.27, 0.07, 0.11], 0.42, -0.5, 0, 0.02)
+  chip(L, -1.05, -0.2, 0.26, 0.17, 4, 2)
+  // three power drivers with their tabs, two electrolytics, a power inductor
+  for (const x of [0.92, 1.2, 1.48]) dpak(L, x, -0.52)
+  for (const x of [1.22, 1.52]) ecap(L, x, 0.5, 0.13, 0.3)
+  L.top('dark', [0.28, 0.14, 0.28], 0.68, -0.02)
+  L.top('grey', [0.16, 0.004, 0.16], 0.68, -0.02, 0, 0.14)
+  smd(L, 'tan', [
+    [0.3, -0.15],
+    [0.3, 0.02],
+    [-0.6, -0.3],
+    [-0.62, 0.02],
+    [1.05, -0.12],
+    [1.33, -0.12],
+  ])
+  smd(L, 'dark', [
+    [-0.85, 0.08],
+    [-1.25, 0.08],
+    [1.6, -0.12],
+    [0.2, -0.58],
+  ], Math.PI / 2)
+  // "ECU" in silkscreen and the output marks under the LEDs
+  for (const [k, ch] of ['E', 'C', 'U'].entries()) glyph(L, ch, -0.9 + k * 0.13, -0.47, 0.12, 0.02)
+  for (let i = 0; i < OUTPUTS; i++) L.flat('silk', 0.07, 0.022, -1.5 + i * 0.16, -0.58)
+  for (const [x, z] of [
+    [-1.6, -0.8],
+    [1.6, -0.8],
+    [1.6, 0.8],
+  ]) mountHole(L, x, z, 0.06)
+  return {
+    pcb: { w: 3.4, d: 1.8, color: '#1d4a33' },
+    layout: L,
+    leds: Array.from({ length: OUTPUTS }, (_, i) => [-1.5 + i * 0.16, -0.7]),
+    ledSize: [0.08, 0.05],
+    power: [-1.5, -0.2],
+    powerColor: '#22c55e',
+    shift: 0.05,
+    lift: -0.08,
+  }
+}
+
+/** a factory PLC: a grey DIN-rail module with terminal rows top and bottom */
+function plc(): Spec {
+  const L = new Layout()
+  /** the top of the raised front, where the panel, LEDs and LCD are */
+  const D = 0.36
+  const SHELF = 0.16
+  // the DIN rail behind it, the housing: low shelves for the terminals, a raised front between them
+  L.box('silver', [3.62, 0.04, 0.34], [0, -BOARD_T / 2 - 0.02, 0])
+  L.top('plastic', [3.34, SHELF, 1.74], 0, 0)
+  L.top('plastic', [3.34, D - SHELF, 0.9], 0, 0, 0, SHELF)
+  L.flat('teal', 3.34, 0.07, 0, -0.41, 0, D)
+  // input terminals along the back, outputs and supply along the front
+  for (const x0 of [-1.54, -0.62, 0.3]) screwTerminals(L, x0, -0.66, 4, 0.22, -1, 0.17, 0.3, SHELF)
+  screwTerminals(L, -1.54, 0.66, 2, 0.22, 1, 0.17, 0.3, SHELF)
+  screwTerminals(L, -0.95, 0.66, 4, 0.22, 1, 0.17, 0.3, SHELF)
+  screwTerminals(L, 0.25, 0.66, 6, 0.22, 1, 0.17, 0.3, SHELF)
+  // the charcoal front panel: the LCD in its bezel, the keypad, the LEDs
+  L.flat('charcoal', 3.2, 0.74, 0, 0.03, 0, D)
+  L.top('black', [0.94, 0.012, 0.54], -1.08, 0.02, 0, D)
+  const ink = TOP + D + 0.012 + 0.008
+  for (const [dz, w] of [
+    [-0.12, 0.5],
+    [-0.04, 0.62],
+    [0.04, 0.36],
+    [0.12, 0.56],
+  ]) L.box('ink', [w, 0.002, 0.04], [-1.08 - (0.7 - w) / 2, ink, 0.02 + dz])
+  for (const [dx, dz] of [
+    [0, -0.14],
+    [0, 0.14],
+    [-0.14, 0],
+    [0.14, 0],
+  ]) {
+    L.top('slate', [0.1, 0.03, 0.1], -0.36 + dx, 0.02 + dz, 0, D)
+  }
+  for (const dx of [-0.12, 0.12]) L.top('slate', [0.16, 0.03, 0.08], -0.36 + dx, 0.3, 0, D)
+  // "PLC" and the output names, a flap over the memory card slot, vents
+  for (const [k, ch] of ['P', 'L', 'C'].entries()) glyph(L, ch, 1.12 + k * 0.15, -0.2, 0.15, 0.024, D)
+  L.flat('silk', 0.07, 0.022, 0.36, -0.11, 0, D)
+  for (let i = 0; i < OUTPUTS; i++) L.flat('silk', 0.12, 0.022, 0.36 + i * 0.22, 0.32, 0, D)
+  L.top('plastic', [0.5, 0.012, 0.18], 0.75, -0.22, 0, D)
+  L.flat('hole', 0.12, 0.02, 0.75, -0.22, 0, D + 0.012)
+  return {
+    pcb: { w: 3.4, d: 1.8, color: '#a3a9b2' },
+    layout: L,
+    leds: Array.from({ length: OUTPUTS }, (_, i) => [0.36 + i * 0.22, 0.22]),
+    ledSize: [0.09, 0.06],
+    ledColor: ['#22c55e', '#4d6b58'],
+    power: [0.36, -0.2],
+    powerColor: '#22c55e',
+    deck: D,
+    screen: { x: -1.08, z: 0.02, w: 0.84, d: 0.44, y: D + 0.012, color: '#8fd3c4', glow: '#2dd4bf' },
+    shift: 0,
+    lift: -0.12,
+  }
+}
+
+/** the remote terminal unit (RTU) of an oil well: a dark board in a safety-orange tray */
+function rtu(): Spec {
+  const L = new Layout()
+  // the tray: a floor under the board and walls round it
+  const yb = -BOARD_T / 2 - 0.05
+  const yt = TOP + 0.1
+  const wy = (yb + yt) / 2
+  L.box('orange', [3.4, 0.05, 1.8], [0, yb + 0.025, 0])
+  for (const z of [-0.85, 0.85]) L.box('orange', [3.4, yt - yb, 0.1], [0, wy, z])
+  for (const x of [-1.65, 1.65]) L.box('orange', [0.1, yt - yb, 1.6], [x, wy, 0])
+  for (const x of [-1.65, 1.65]) for (const z of [-0.85, 0.85]) L.cyl('silver', 0.035, 0.01, [x, yt + 0.005, z])
+  // the 18650 cell in its holder
+  const B = { x: -0.78, z: -0.4, r: 0.17 }
+  const by = TOP + 0.04 + B.r
+  L.top('black', [1.42, 0.1, 0.44], B.x, B.z)
+  for (const side of [-1, 1]) L.top('black', [0.08, 0.32, 0.44], B.x + side * 0.67, B.z)
+  L.cyl('blue', B.r, 1.16, [B.x, by, B.z], 'x')
+  L.cyl('white', B.r + 0.003, 0.025, [B.x + 0.5, by, B.z], 'x')
+  L.cyl('silver', B.r * 0.42, 0.06, [B.x + 0.6, by, B.z], 'x')
+  L.cyl('silver', B.r * 0.75, 0.03, [B.x - 0.6, by, B.z], 'x')
+  // the radio: a shield can, its gold SMA socket and a short black antenna standing up
+  L.top('silver', [0.66, 0.1, 0.56], 0.98, -0.36)
+  L.flat('grey', 0.3, 0.03, 0.9, -0.48)
+  L.flat('grey', 0.22, 0.03, 0.86, -0.4)
+  L.flat('gold', 0.05, 0.16, 1.43, -0.45)
+  const A = { x: 1.43, z: -0.6 }
+  L.cyl('gold', 0.08, 0.06, [A.x, TOP + 0.03, A.z], 'y', false, 0, 6)
+  L.cyl('gold', 0.05, 0.12, [A.x, TOP + 0.12, A.z])
+  L.cyl('rubber', 0.065, 0.1, [A.x, TOP + 0.23, A.z])
+  L.cyl('rubber', 0.045, 0.4, [A.x, TOP + 0.48, A.z])
+  L.cyl('rubber', 0.05, 0.03, [A.x, TOP + 0.69, A.z])
+  // the controller and its passives
+  chip(L, 0.25, -0.05, 0.38, 0.38, 9, 4)
+  L.top('silver', [0.2, 0.05, 0.09], 0.25, 0.28)
+  smd(L, 'tan', [
+    [-0.05, -0.2],
+    [-0.05, 0.08],
+    [0.55, -0.02],
+    [0.55, 0.16],
+  ])
+  smd(L, 'dark', [
+    [0.85, 0.2],
+    [1.05, 0.2],
+    [1.25, 0.2],
+  ], Math.PI / 2)
+  regulator(L, 1.3, -0.02)
+  // field terminals along the front: outputs, inputs and the supply
+  for (const x0 of [-1.48, -0.66, 0.16]) screwTerminals(L, x0, 0.52, 4, 0.2, 1, 0.2, 0.26)
+  screwTerminals(L, 1.06, 0.52, 2, 0.2, 1, 0.2, 0.26)
+  for (let i = 0; i < OUTPUTS; i++) L.flat('silk', 0.08, 0.022, -1.38 + i * 0.2, 0.02)
+  for (const x of [-1.45, 1.45]) for (const z of [-0.65, 0.65]) mountHole(L, x, z, 0.05)
+  return {
+    pcb: { w: 3.1, d: 1.5, color: '#1c2430' },
+    layout: L,
+    leds: Array.from({ length: OUTPUTS }, (_, i) => [-1.38 + i * 0.2, 0.12]),
+    ledSize: [0.08, 0.05],
+    power: [0.75, 0.12],
+    powerColor: '#22c55e',
+    shift: 0,
+    lift: -0.1,
+  }
+}
+
+const SPECS: Record<Variant, () => Spec> = { nano, mega, esp32, esp8266, pico, microbit, raspberrypi, ecu, plc, rtu }
 
 const unit = (v: number | undefined) => THREE.MathUtils.clamp(v !== undefined && Number.isFinite(v) ? v : 0, 0, 1)
 
-/** A tiny SMD LED on the board with its glow, following `level` (0..1). */
-function Led({ x, z, size, level, color, off, halo }: { x: number; z: number; size: [number, number]; level: number; color: string; off: string; halo: number }) {
+/** A tiny SMD LED on the board with its glow, following `level` (0..1); `y` lifts it onto a housing. */
+function Led({
+  x,
+  z,
+  y = 0,
+  size,
+  level,
+  color,
+  off,
+  halo,
+}: {
+  x: number
+  z: number
+  y?: number
+  size: [number, number]
+  level: number
+  color: string
+  off: string
+  halo: number
+}) {
   const material = useRef<THREE.MeshStandardMaterial>(null)
   const lit = useRef(unit(level))
   const glow = useRef(0)
@@ -635,19 +909,36 @@ function Led({ x, z, size, level, color, off, halo }: { x: number; z: number; si
   })
   return (
     <>
-      <mesh position={[x, TOP + 0.018, z]}>
+      <mesh position={[x, TOP + y + 0.018, z]}>
         <boxGeometry args={[size[0], 0.035, size[1]]} />
         <meshStandardMaterial ref={material} color={off} emissive={color} emissiveIntensity={0.02} roughness={0.35} toneMapped={false} />
       </mesh>
-      <Halo color={color} intensity={glow} position={[x, TOP + 0.08, z]} scale={halo} />
+      <Halo color={color} intensity={glow} position={[x, TOP + y + 0.08, z]} scale={halo} />
     </>
   )
 }
 
+/** A backlit LCD that lights up with the power. */
+function Screen({ screen, powered }: { screen: NonNullable<Spec['screen']>; powered: boolean }) {
+  const material = useRef<THREE.MeshStandardMaterial>(null)
+  const lit = useRef(powered ? 1 : 0)
+  useFrame((_, dt) => {
+    lit.current = damp(lit.current, powered ? 1 : 0, 6, dt)
+    if (material.current) material.current.emissiveIntensity = 0.04 + lit.current * 0.5
+  })
+  return (
+    <mesh position={[screen.x, TOP + screen.y + 0.004, screen.z]}>
+      <boxGeometry args={[screen.w, 0.008, screen.d]} />
+      <meshStandardMaterial ref={material} color={screen.color} emissive={screen.glow} emissiveIntensity={0.04} roughness={0.3} />
+    </mesh>
+  )
+}
+
 /**
- * Other microcontroller and computer boards. Each shows its six output pins
- * as amber LEDs beside the header, plus a power LED; the micro:bit also
- * lights its 5 × 5 grid, one column per output.
+ * Other microcontroller, computer and industrial boards. Each shows its six
+ * output pins as LEDs (amber unless the board has its own colour) beside the
+ * header, plus a power LED; the micro:bit also lights its 5 × 5 grid, one
+ * column per output, and the PLC's LCD lights up with the power.
  */
 export function BoardModel({
   variant,
@@ -701,9 +992,20 @@ export function BoardModel({
         ))}
 
         {spec.leds.map(([x, z], i) => (
-          <Led key={i} x={x} z={z} size={spec.ledSize} level={levels[i] ?? 0} color="#ffa31a" off="#fde9b8" halo={0.5} />
+          <Led
+            key={i}
+            x={x}
+            z={z}
+            y={spec.deck}
+            size={spec.ledSize}
+            level={levels[i] ?? 0}
+            color={spec.ledColor?.[0] ?? '#ffa31a'}
+            off={spec.ledColor?.[1] ?? '#fde9b8'}
+            halo={0.5}
+          />
         ))}
-        <Led x={spec.power[0]} z={spec.power[1]} size={spec.ledSize} level={powered ? 1 : 0} color={spec.powerColor} off="#e5e7eb" halo={0.6} />
+        <Led x={spec.power[0]} z={spec.power[1]} y={spec.deck} size={spec.ledSize} level={powered ? 1 : 0} color={spec.powerColor} off="#e5e7eb" halo={0.6} />
+        {spec.screen && <Screen screen={spec.screen} powered={powered} />}
         {matrix &&
           Array.from({ length: 25 }, (_, k) => (
             <mesh key={k} position={[matrix.x + (Math.floor(k / 5) - 2) * matrix.pitch, TOP + 0.015, matrix.z + ((k % 5) - 2) * matrix.pitch]}>

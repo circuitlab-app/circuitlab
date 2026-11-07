@@ -184,7 +184,7 @@ const inputClass = cn(
 )
 
 /** A text box that changes the screen as you type and undoes in one step. */
-function TextBox({
+export function TextBox({
   value,
   label,
   multiline = false,

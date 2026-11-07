@@ -93,6 +93,8 @@ export function Workspace() {
         fitViewOptions={{ padding: 0.25, maxZoom: 1.1 }}
         colorMode={theme}
         defaultEdgeOptions={{ type: 'wire' }}
+        // no "React Flow" link in the corner of the board
+        proOptions={{ hideAttribution: true }}
       >
         <Background variant={BackgroundVariant.Dots} gap={24} size={1.6} className="board__grid" />
         <MiniMap

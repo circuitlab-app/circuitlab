@@ -1,4 +1,4 @@
-import { COUNTER_OUTPUTS, ELECTRICAL as E, LED_FORWARD_VOLTAGE } from './catalog'
+import { COUNTER_OUTPUTS, ELECTRICAL as E, LED_FORWARD_VOLTAGE, PPS_WIDTH, RADIOS, radioFlash, type RadioType } from './catalog'
 import type { PartResult, PartStatus } from './solver'
 import type { MeterDial, PartData, PartType } from './types'
 
@@ -34,6 +34,13 @@ export const DEVICE_TYPES = [
   'hBridge',
   'multimeter',
   'logicProbe',
+  'gsm',
+  'wifi',
+  'bluetooth',
+  'lora',
+  'gps',
+  'canBus',
+  'rs485',
 ] as const satisfies readonly PartType[]
 
 export type DeviceType = (typeof DEVICE_TYPES)[number]
@@ -831,6 +838,136 @@ function logicProbe({ id, pin, time, memory }: DeviceContext): Device {
   }
 }
 
+/* ------------------------------------------------------- message modules */
+
+/** What a message module is doing, worked out from the clock and what it remembers. */
+export type RadioState = {
+  /** it has joined its network (the GPS: it has a fix) */
+  linked: boolean
+  /** a message is going out right now (the GPS: its PPS pin is HIGH) */
+  tx: boolean
+  /** messages sent since the simulation started */
+  sent: number
+  /** the SMS module only: how far the text it is sending has got, 0..1, or null */
+  progress: number | null
+}
+
+/**
+ * Steps a message module on by one moment. `up` is how long it has had power
+ * (null without it). The SMS module sends one text each time IN goes HIGH, but
+ * never two at once: while one is going out, IN is not watched, and IN must go
+ * LOW again before the next one. The others send the volts on IN all the time,
+ * once every `period`; the GPS pulses its PPS pin at the start of every second.
+ */
+export function radioStep(
+  type: RadioType,
+  { up, time, high, sent, armed, since }: { up: number | null; time: number; high: boolean; sent: number; armed: boolean; since: number | null },
+): RadioState & { armed: boolean; since: number | null } {
+  const spec = RADIOS[type]
+  const linked = up !== null && up >= spec.link
+  if (type === 'gps') return { linked, tx: linked && time % 1 < PPS_WIDTH, sent, progress: null, armed, since: null }
+  if (!spec.onEvent) {
+    const live = linked ? up! - spec.link : 0
+    return {
+      linked,
+      tx: linked && live % spec.period < radioFlash(type),
+      sent: linked ? sent + Math.floor(live / spec.period) + 1 : sent,
+      progress: null,
+      armed,
+      since: null,
+    }
+  }
+  let count = sent
+  let start = since
+  // the text that was going out has arrived
+  if (start !== null && time - start >= spec.period) {
+    count += 1
+    start = null
+  }
+  // without power it cannot finish sending
+  if (up === null) start = null
+  let ready = armed || !high
+  if (linked && start === null && ready && high) {
+    start = time
+    ready = false
+  }
+  return {
+    linked,
+    tx: start !== null,
+    sent: count,
+    progress: start === null ? null : Math.min(1, (time - start) / spec.period),
+    armed: ready,
+    since: start,
+  }
+}
+
+/**
+ * The message modules: SMS, Wi-Fi, Bluetooth, LoRa, GPS, CAN bus and RS-485.
+ * Each is a small chip on + and − with an input that only listens (the GPS has
+ * an output instead). Their state lives in `memory`: when the power came on,
+ * and for the SMS module what it has sent.
+ */
+function radio(ctx: DeviceContext): Device {
+  const { id, time, memory, data } = ctx
+  const type = data.type as RadioType
+  const R = E.radio
+  const output = RADIOS[type].output
+  const chip = chipBody(ctx, {
+    inputs: output ? [] : ['IN'],
+    minVoltage: R.minVoltage,
+    supplyResistance: R.supplyResistance,
+    inputResistance: R.inputResistance,
+    outputResistance: R.outputResistance,
+  })
+  const poweredAt = memory[`${id}:on`]
+  // modules that keep a running count (the always-sending ones work it out from the clock)
+  const sentBefore = memory[`${id}:sent`] ?? 0
+  const step = (powered: boolean, high: boolean) =>
+    radioStep(type, {
+      up: powered ? time - (poweredAt ?? time) : null,
+      time,
+      high,
+      sent: RADIOS[type].onEvent ? sentBefore : 0,
+      armed: memory[`${id}:armed`] !== 0,
+      since: memory[`${id}:tx`] ?? null,
+    })
+  return {
+    stamp(m) {
+      chip.stamp(m)
+      if (output) chip.drive(m, output, step(chip.powered, false).tx)
+    },
+    update: (v, mayFlip) => chip.updatePower(v, mayFlip),
+    result(v, remember) {
+      const supply = chip.supply(v)
+      const result = blank(supply)
+      const on = chip.powered
+      // the share of its supply on IN: the value it sends
+      const reading = output || !on || supply <= 0 ? 0 : Math.min(1, Math.max(0, (v(ctx.pin('IN')) - v(chip.gnd)) / supply))
+      const state = step(on, output ? false : chip.high(v, 'IN'))
+      result.current = chip.draw(v, output ? [[output, state.tx]] : [])
+      result.power = supply * result.current
+      result.level = output ? (on && state.tx ? 1 : 0) : reading
+      result.channels = {
+        link: state.linked ? 1 : 0,
+        tx: on && state.tx ? 1 : 0,
+        sent: state.sent,
+        value: reading,
+        ...(state.progress !== null ? { progress: state.progress } : {}),
+        // the GPS counts the satellites it hears: four or more give a fix
+        ...(type === 'gps' ? { sats: !on ? 0 : state.linked ? 9 : Math.min(3, Math.floor(time - (poweredAt ?? time))) } : {}),
+      }
+      result.status = supplyStatus(on, supply)
+      if (on) remember[`${id}:on`] = poweredAt ?? time
+      if (RADIOS[type].onEvent) {
+        remember[`${id}:sent`] = state.sent
+        remember[`${id}:armed`] = state.armed ? 1 : 0
+        if (state.since !== null) remember[`${id}:tx`] = state.since
+      }
+      return result
+    },
+  }
+}
+
 const FACTORIES: Record<DeviceType, (ctx: DeviceContext) => Device> = {
   zener,
   pnp,
@@ -850,6 +987,13 @@ const FACTORIES: Record<DeviceType, (ctx: DeviceContext) => Device> = {
   hBridge,
   multimeter,
   logicProbe,
+  gsm: radio,
+  wifi: radio,
+  bluetooth: radio,
+  lora: radio,
+  gps: radio,
+  canBus: radio,
+  rs485: radio,
 }
 
 /** The device for a part, or null when the solver handles the part itself. */

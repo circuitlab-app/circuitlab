@@ -10,6 +10,7 @@ import { playClick } from '@/lib/sound'
 import { cn } from '@/lib/utils'
 import { useCircuit } from '@/store/circuit'
 import { Bit, LcdRow, RelayRow } from './WorkshopControls'
+import { RadioRow } from './RadioPanels'
 
 /*
  * Card controls for the newer parts: the Zener, MOSFET, optocoupler, IR LED,
@@ -392,6 +393,14 @@ export function LabControl({ id, data, result }: { id: string; data: PartData; r
       return <MeterControl id={id} data={data} result={result} />
     case 'logicProbe':
       return <ProbeRow channels={result?.channels} label={label} />
+    case 'gsm':
+    case 'wifi':
+    case 'bluetooth':
+    case 'lora':
+    case 'gps':
+    case 'canBus':
+    case 'rs485':
+      return <RadioRow data={data} result={result} />
     default:
       return null
   }

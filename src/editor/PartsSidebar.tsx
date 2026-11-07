@@ -21,6 +21,7 @@ const CATEGORIES: PartCategory[] = [
   'output',
   'display',
   'sensor',
+  'comms',
   'meter',
 ]
 

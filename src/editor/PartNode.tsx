@@ -18,6 +18,7 @@ import {
   TIMER_RATES,
   BUZZER_SOUNDS,
   dynamoVoltage,
+  isRadio,
   formatAmps,
   formatOhms,
   lemonCount,
@@ -655,6 +656,9 @@ function NodeControl({ id, data, result }: { id: string; data: PartData; result?
     case 'pico':
     case 'microbit':
     case 'raspberrypi':
+    case 'ecu':
+    case 'plc':
+    case 'rtu':
       return <BoardPins id={id} type={data.type} pins={data.pins ?? {}} levels={result?.pins} />
     case 'aiBoard':
       // the pins as on every board, and a button to talk to it
@@ -982,15 +986,19 @@ function PartNodeComponent({ id, data, selected }: NodeProps<PartNodeType>) {
         ? !!data.pressed
         : null
   const chipStatus: PartStatus = mechanical === null ? status : mechanical ? 'on' : 'idle'
+  // a message module that is still joining its network says so
+  const joining = isRadio(data.type) && chipStatus === 'on' && (result?.channels?.link ?? 0) < 0.5
   // the two-way switch is always joined to one side: it says which one, and lights up while current flows
   const statusLabel =
     data.type === 'slideSwitch'
       ? data.closed
         ? t.inputs.toB
         : t.inputs.toA
-      : chipStatus === 'on'
-        ? t.parts[data.type].working
-        : t.status[chipStatus]
+      : joining && isRadio(data.type)
+        ? t.radio.joining[data.type]
+        : chipStatus === 'on'
+          ? t.parts[data.type].working
+          : t.status[chipStatus]
   // an AI board waiting for its model says so on its title row
   const thinking = useAiChat((s) => data.type === 'aiBoard' && s.pending[id] !== undefined)
 

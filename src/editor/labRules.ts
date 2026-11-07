@@ -1,4 +1,4 @@
-import { ELECTRICAL } from '@/circuit/catalog'
+import { ELECTRICAL, RADIOS, isRadio } from '@/circuit/catalog'
 import type { PartResult, PartStatus } from '@/circuit/solver'
 import type { PartData, PartType } from '@/circuit/types'
 import type { Dictionary } from '@/i18n'
@@ -28,6 +28,13 @@ const LAB_CONTROLS = new Set<PartType>([
   'hBridge',
   'multimeter',
   'logicProbe',
+  'gsm',
+  'wifi',
+  'bluetooth',
+  'lora',
+  'gps',
+  'canBus',
+  'rs485',
 ])
 
 export const hasLabControl = (type: PartType) => LAB_CONTROLS.has(type)
@@ -71,6 +78,18 @@ export function labTip(data: PartData, result: PartResult, status: PartStatus, t
   const lab = t.lab.tips
   const info = (text: string): Tip => ({ text, tone: 'info' })
   const warn = (text: string): Tip => ({ text, tone: 'warn' })
+  if (isRadio(data.type)) {
+    const r = t.radio.tips
+    if (status === 'reverse') return warn(t.workshop.tips.chipReverse)
+    if (status !== 'on') return info(r.power)
+    const c = result.channels ?? {}
+    if ((c.link ?? 0) < 0.5) return info(r.joining[data.type])
+    if (RADIOS[data.type].onEvent) {
+      if (c.progress !== undefined) return info(r.sending)
+      if ((c.sent ?? 0) > 0) return info(r.sent)
+    }
+    return info(r.ready[data.type])
+  }
   switch (data.type) {
     case 'zener':
       if (status === 'over') return warn(lab.zenerHot)
@@ -166,4 +185,11 @@ export const LAB_WITHOUT_SETTINGS: readonly PartType[] = [
   'comparator',
   'hBridge',
   'logicProbe',
+  // only the SMS module has something to set: its message and phone number
+  'wifi',
+  'bluetooth',
+  'lora',
+  'gps',
+  'canBus',
+  'rs485',
 ]

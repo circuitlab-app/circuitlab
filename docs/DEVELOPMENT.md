@@ -82,6 +82,8 @@ npx shadcn@latest add @animate-ui/icons-lucide-bell # an animated icon
 - Batteries are Norton equivalents with an internal resistance.
 - LEDs are piecewise-linear diodes; the solver repeats until every LED's on/off state is consistent.
 - The newer parts (Zener, PNP, MOSFET, optocoupler, laser, IR LED, solenoid, pump, bell, bar graph, traffic light, fan, latch, counter, comparator, motor driver, multimeter and logic probe) are small "devices" in `src/circuit/devices.ts`: each adds its own stamps, refines its own state in the same loop, and reports its result. The latch, the counter and the logic probe remember their state from one step to the next.
+- The message modules (SMS, Wi-Fi, Bluetooth, LoRa, GPS, CAN bus, RS-485) are devices too (`radio` in `devices.ts`, timings in `RADIOS` in `catalog.ts`). They remember when their power came on, join their network after a set time, and then send: the SMS module one text per rising edge on IN, the others the share of their supply on IN once per period; the GPS drives its PPS pin once a second after its fix. Their card row, the details panel's "receiver" view and the SMS settings are in `src/editor/RadioPanels.tsx`.
+- The car ECU, the factory PLC and the oil well's RTU are ordinary boards in `BOARDS`. The PLC and the RTU show their program in IEC 61131-3 Structured Text (`src/circuit/code.ts`, which writes every board's code).
 
 The solver is pure and unit-tested (`solver.test.ts`, and `outputs.test.ts` for the newer parts). The electrical constants in `src/circuit/catalog.ts` are tuned so toy circuits behave the way kids expect: 1.5 V dim, 3 V bright, 9 V burns the lamp.
 

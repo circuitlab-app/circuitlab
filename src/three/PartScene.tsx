@@ -57,6 +57,8 @@ import { CoinCellModel, DynamoModel, LemonModel, PowerBankModel } from './models
 import { ForceSensorModel, HallSensorModel, KnockSensorModel, PulseSensorModel } from './models/HandSensors'
 import { FlameSensorModel, IrSensorModel, LineSensorModel } from './models/InfraredSensors'
 import { JoystickModel, MicroSwitchModel, SlideSwitchModel } from './models/Inputs'
+import { PressureSensorModel } from './models/Gauges'
+import { RadioModel } from './models/Radios'
 import { HumiditySensorModel, RainSensorModel, WaterSensorModel } from './models/WaterSensors'
 
 /*
@@ -141,6 +143,15 @@ const FRAMING = {
   multimeter: { camera: [0, 0.4, 4.6], scale: 1.15, lift: -0.04 },
   logicProbe: { camera: [0, 0.4, 4.6], scale: 1.03, lift: -0.17 },
   aiBoard: { camera: [0, 0.4, 4.6], scale: 1.06, lift: -0.1 },
+  // the message modules and the pressure gauge
+  gsm: { camera: [0, 0.4, 4.6], scale: 0.85, lift: 0 },
+  wifi: { camera: [0, 0.4, 4.6], scale: 0.74, lift: 0 },
+  bluetooth: { camera: [0, 0.4, 4.6], scale: 0.76, lift: 0 },
+  lora: { camera: [0, 0.4, 4.6], scale: 0.95, lift: 0 },
+  gps: { camera: [0, 0.4, 4.6], scale: 0.75, lift: 0 },
+  canBus: { camera: [0, 0.4, 4.6], scale: 0.76, lift: 0 },
+  rs485: { camera: [0, 0.4, 4.6], scale: 0.72, lift: 0 },
+  pressureSensor: { camera: [0, 0.4, 4.6], scale: 0.8, lift: 0 },
 } satisfies Record<string, Framing>
 
 /** The animated 3D preview of one part, driven by its simulation result. */
@@ -252,6 +263,9 @@ export function PartScene({
     case 'pico':
     case 'microbit':
     case 'raspberrypi':
+    case 'ecu':
+    case 'plc':
+    case 'rtu':
       return (
         <Stage {...FRAMING.arduino}>
           <BoardModel
@@ -603,6 +617,23 @@ export function PartScene({
           <PowerBankModel on={status === 'on' || status === 'over'} limiting={status === 'over'} />
         </Stage>
       )
+    case 'gsm':
+    case 'wifi':
+    case 'bluetooth':
+    case 'lora':
+    case 'gps':
+    case 'canBus':
+    case 'rs485':
+      return (
+        <Stage {...FRAMING[data.type]}>
+          <RadioModel
+            variant={data.type}
+            powered={status === 'on'}
+            linked={(result?.channels?.link ?? 0) > 0.5}
+            tx={(result?.channels?.tx ?? 0) > 0.5}
+          />
+        </Stage>
+      )
     case 'logicProbe':
       return (
         <Stage {...FRAMING.logicProbe}>
@@ -635,6 +666,7 @@ export function PartScene({
         forceSensor: ForceSensorModel,
         pulseSensor: PulseSensorModel,
         knockSensor: KnockSensorModel,
+        pressureSensor: PressureSensorModel,
       }[data.type as string]
       if (!Model) return null
       // the newer modules each have a framing of their own

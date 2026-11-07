@@ -23,6 +23,7 @@ export type PartCategory =
   | 'display'
   | 'sensor'
   | 'meter'
+  | 'comms'
 
 export type TerminalDef = {
   side: Side
@@ -190,6 +191,11 @@ export const ELECTRICAL = {
   },
   /** logic probe: HIGH above 70 % of its supply, LOW below 30 %; a change lights PULSE for a moment */
   logicProbe: { minVoltage: 3, supplyResistance: 2000, biasResistance: 1e6, high: 0.7, low: 0.3, pulseTime: 0.3 },
+  /**
+   * the message modules (SMS, Wi-Fi, Bluetooth, LoRa, GPS, CAN, RS-485): they start from 3 V
+   * and use about 20 mA from 5 V; IN only listens, and the GPS drives its PPS pin like a chip
+   */
+  radio: { minVoltage: 3, supplyResistance: 250, inputResistance: 1e6, outputResistance: 100 },
 } as const
 
 /** AA packs of 1 to 4 cells, a 9 V block and a 12 V block */
@@ -229,6 +235,9 @@ export type BoardType =
   | 'microbit'
   | 'raspberrypi'
   | 'aiBoard'
+  | 'ecu'
+  | 'plc'
+  | 'rtu'
 
 /** What a microcontroller board offers. Every board shows six output pins, its supply, GND and one input. */
 export type BoardSpec = {
@@ -245,7 +254,7 @@ export type BoardSpec = {
   /** highest number its analog input reads */
   adcMax: number
   /** language of the code shown in the details panel */
-  language: 'arduino' | 'micropython-pico' | 'micropython-microbit' | 'python'
+  language: 'arduino' | 'micropython-pico' | 'micropython-microbit' | 'python' | 'iec-st'
   /** how the pin is written in that code */
   codeName: (pin: string) => string
   /** short text printed on the header pin */
@@ -254,6 +263,13 @@ export type BoardSpec = {
 
 const ARDUINO_HEADER = ['D13', 'D12', 'D11', 'D10', 'D9', 'D8'] as const
 const AI_PINS = ['P1', 'P2', 'P3', 'P4', 'P5', 'P6'] as const
+/** the car computer's six low-side drivers: the first three can dim and slow things down (PWM) */
+const ECU_PINS = ['OUT1', 'OUT2', 'OUT3', 'OUT4', 'OUT5', 'OUT6'] as const
+/** the PLC's analog output, then its five relay outputs */
+const PLC_PINS = ['AQ0', 'Q0', 'Q1', 'Q2', 'Q3', 'Q4'] as const
+/** the RTU's two analog outputs, then its four digital ones */
+const RTU_PINS = ['AO1', 'AO2', 'DO1', 'DO2', 'DO3', 'DO4'] as const
+const same = (pin: string) => pin
 const drop = (prefix: string) => (pin: string) => pin.slice(prefix.length)
 const all = (pins: readonly string[]) => new Set(pins)
 
@@ -342,6 +358,46 @@ export const BOARDS: Record<BoardType, BoardSpec> = {
     codeName: (pin) => pin,
     label: (pin) => pin,
   },
+  // a car's engine computer (ECU). It gives its sensors a steady 5 V reference, reads them
+  // with a 12-bit converter, and drives fans, lights and pumps: OUT1 … OUT3 with PWM
+  ecu: {
+    voltage: 5,
+    supply: '5V',
+    pins: ECU_PINS,
+    pwm: new Set(['OUT1', 'OUT2', 'OUT3']),
+    input: 'AIN',
+    adcMax: 4095,
+    language: 'arduino',
+    codeName: same,
+    label: same,
+  },
+  // a factory PLC: AQ0 can be set anywhere between off and on, the relay outputs Q0 … Q4
+  // just switch. Real PLCs work with 24 V; this one uses 5 V so it is safe with the kit
+  plc: {
+    voltage: 5,
+    supply: '5V',
+    pins: PLC_PINS,
+    pwm: new Set(['AQ0']),
+    input: 'AI0',
+    // the usual full-scale count of a PLC's analog input
+    adcMax: 27648,
+    language: 'iec-st',
+    codeName: same,
+    label: same,
+  },
+  // the remote terminal unit (RTU) of an oil well: four digital outputs and two analog ones,
+  // programmed like a PLC, sending what it measures back to the control room
+  rtu: {
+    voltage: 5,
+    supply: '5V',
+    pins: RTU_PINS,
+    pwm: new Set(['AO1', 'AO2']),
+    input: 'AI1',
+    adcMax: 4095,
+    language: 'iec-st',
+    codeName: same,
+    label: same,
+  },
 }
 
 export const isBoard = (type: PartType): type is BoardType => type in BOARDS
@@ -421,6 +477,9 @@ export const PART_ORDER: PartType[] = [
   'microbit',
   'raspberrypi',
   'aiBoard',
+  'ecu',
+  'plc',
+  'rtu',
   'switch',
   'button',
   'slideSwitch',
@@ -488,6 +547,7 @@ export const PART_ORDER: PartType[] = [
   'forceSensor',
   'pulseSensor',
   'knockSensor',
+  'pressureSensor',
   'multimeter',
   'voltmeter',
   'ammeter',
@@ -499,6 +559,13 @@ export const PART_ORDER: PartType[] = [
   'tft',
   'matrix',
   'ledwall',
+  'gsm',
+  'wifi',
+  'bluetooth',
+  'lora',
+  'gps',
+  'canBus',
+  'rs485',
 ]
 
 const twoWay: Record<TerminalId, TerminalDef> = {
@@ -597,6 +664,59 @@ const board = (type: BoardType, accent: string): PartDef => {
   }
 }
 
+/** The message modules. */
+export type RadioType = 'gsm' | 'wifi' | 'bluetooth' | 'lora' | 'gps' | 'canBus' | 'rs485'
+export const RADIO_TYPES: readonly RadioType[] = ['gsm', 'wifi', 'bluetooth', 'lora', 'gps', 'canBus', 'rs485']
+export const isRadio = (type: PartType): type is RadioType => (RADIO_TYPES as readonly string[]).includes(type)
+
+export type RadioSpec = {
+  /** seconds from power-on until it has joined its network (the GPS: until it has a fix) */
+  link: number
+  /** seconds between two messages; the SMS module needs this long to send one */
+  period: number
+  /** sends a message only when IN goes HIGH (SMS), instead of the volts on IN all the time */
+  onEvent?: boolean
+  /** has an output instead of IN: the GPS's PPS pin, which pulses once a second */
+  output?: string
+}
+
+/**
+ * How each module behaves, shortened so a child sees it happen: a phone module
+ * needs a few seconds to find the network and to send a text, Wi-Fi and
+ * Bluetooth join in a second or so, the wired buses at once. A real GPS needs
+ * half a minute under open sky for its first fix; this one needs 3 seconds.
+ */
+export const RADIOS: Record<RadioType, RadioSpec> = {
+  gsm: { link: 2, period: 2, onEvent: true },
+  wifi: { link: 1.5, period: 1 },
+  bluetooth: { link: 1, period: 0.5 },
+  lora: { link: 0.5, period: 2 },
+  gps: { link: 3, period: 1, output: 'PPS' },
+  canBus: { link: 0.1, period: 0.1 },
+  rs485: { link: 0.1, period: 0.25 },
+}
+
+/** How long a module's TX light flashes for each message. */
+export const radioFlash = (type: RadioType) => Math.min(0.2, RADIOS[type].period / 2)
+
+/** How long the GPS's PPS pin stays HIGH at the start of each second. */
+export const PPS_WIDTH = 0.2
+
+/** Message modules: + and − on the left; IN (or the GPS's PPS) on the right. */
+function radio(type: RadioType, accent: string): PartDef {
+  const output = RADIOS[type].output
+  return {
+    category: 'comms',
+    accent,
+    terminals: {
+      VCC: { side: 'left', offset: 0.68, polarity: '+' },
+      GND: { side: 'left', offset: 0.32, polarity: '-' },
+      [output ?? 'IN']: { side: 'right', label: output ?? 'IN' },
+    },
+    defaults: {},
+  }
+}
+
 /** Screens: + and − on the left like the sensor modules; some read a voltage on S. */
 function screen(type: DisplayType, accent: string): PartDef {
   return {
@@ -636,6 +756,17 @@ export const PARTS: Record<PartType, PartDef> = {
   microbit: board('microbit', '#7c3aed'),
   raspberrypi: board('raspberrypi', '#c51a4a'),
   aiBoard: board('aiBoard', '#6d5bd0'),
+  ecu: board('ecu', '#dc2626'),
+  plc: board('plc', '#0d9488'),
+  rtu: board('rtu', '#ea580c'),
+  gsm: radio('gsm', '#e11d48'),
+  wifi: radio('wifi', '#2563eb'),
+  bluetooth: radio('bluetooth', '#0ea5e9'),
+  lora: radio('lora', '#7c3aed'),
+  gps: radio('gps', '#059669'),
+  canBus: radio('canBus', '#ca8a04'),
+  rs485: radio('rs485', '#4f46e5'),
+  pressureSensor: { category: 'sensor', accent: '#475569', terminals: sensorModule, defaults: { sense: 0.35 } },
   switch: { category: 'control', accent: '#6366f1', terminals: twoWay, defaults: { closed: false } },
   button: { category: 'control', accent: '#ec4899', terminals: twoWay, defaults: {} },
   dimmer: { category: 'control', accent: '#14b8a6', terminals: twoWay, defaults: { level: 0.7 } },
@@ -984,6 +1115,8 @@ export const senseToCelsius = (s: number) => Math.round(s * 60)
 export const senseToCentimetres = (s: number) => Math.round(2 + s * 198)
 /** the water sensor's strip is 4 cm long */
 export const senseToWaterDepth = (s: number) => Math.round(s * 40) / 10
+/** the pressure sensor reads 0 … 200 bar */
+export const senseToBar = (s: number) => Math.round(Math.min(1, Math.max(0, s)) * 200)
 /** the heartbeat sensor: 40 to 180 beats a minute */
 export const senseToBpm = (s: number) => Math.round(40 + Math.min(1, Math.max(0, s)) * 140)
 
@@ -1020,6 +1153,7 @@ export type SensedPart =
   | 'forceSensor'
   | 'pulseSensor'
   | 'knockSensor'
+  | 'pressureSensor'
 
 export const SENSORS: Partial<Record<PartType, SensorSpec>> & Record<SensedPart, SensorSpec> = {
   thermistor: { control: 'slider', format: (s) => `${senseToCelsius(s)}°C` },
@@ -1052,6 +1186,8 @@ export const SENSORS: Partial<Record<PartType, SensorSpec>> & Record<SensedPart,
     signal: (s, time) => heartbeat(senseToBpm(s), time),
   },
   knockSensor: { control: 'hold', digital: true, signal: (s) => s },
+  // 0 … 200 bar, like the transmitter on a wellhead
+  pressureSensor: { control: 'slider', format: (s) => `${senseToBar(s)} bar`, signal: (s) => s },
 }
 
 export const isSensorModule = (type: PartType) => SENSORS[type]?.signal !== undefined
@@ -1264,6 +1400,8 @@ export function isTimeDependent(data: PartData): boolean {
   if (data.type === 'pulseSensor') return true
   // the logic probe's PULSE light stays on for a moment after each change, then goes out
   if (data.type === 'logicProbe') return true
+  // the message modules join their network, send and blink by the clock
+  if (isRadio(data.type)) return true
   if (isBoard(data.type)) return Object.values(data.pins ?? {}).some((m) => m !== 'off' && m !== 'on')
   return false
 }

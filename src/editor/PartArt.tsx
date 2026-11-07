@@ -1562,6 +1562,327 @@ function AiBoard({ id }: ArtProps) {
   )
 }
 
+/** A car's engine computer with its lid off: the big plug, the brain chip and the drivers that fire the injectors. */
+function Ecu({ id }: ArtProps) {
+  const legs = [0, 1, 2, 3, 4, 5, 6]
+  const pins = [8.2, 9.8, 11.4, 13, 14.6, 16.2, 17.8, 22.4, 24, 25.6, 27.2, 28.8, 30.4, 32, 33.6]
+  const barcode: [number, number][] = [
+    [7.2, 0.3],
+    [7.8, 0.5],
+    [8.6, 0.3],
+    [9.2, 0.6],
+    [10.1, 0.3],
+    [10.7, 0.4],
+    [11.4, 0.3],
+    [12, 0.5],
+    [12.8, 0.3],
+  ]
+  return (
+    <>
+      <defs>
+        <Silver id={id} />
+        <linearGradient id={`${id}k`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#4a4a52" />
+          <stop offset="0.4" stopColor="#232327" />
+          <stop offset="1" stopColor="#0a0a0a" />
+        </linearGradient>
+        <linearGradient id={`${id}c`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#27272a" />
+          <stop offset="0.3" stopColor="#6b6b74" />
+          <stop offset="1" stopColor="#09090b" />
+        </linearGradient>
+      </defs>
+      <Shadow y={41} rx={20} />
+      <Pcb id={id} x={4} y={13} w={40} h={24} light="#3f7d4c" dark="#173d24" edge="#0a2213" />
+      {/* the big plug for the car's wiring: two rows of pins, and a lever that locks it in */}
+      <rect x="5" y="4" width="38" height="13.4" rx="1.6" fill="#000" />
+      <rect x="5" y="4" width="38" height="12.6" rx="1.6" fill={`url(#${id}k)`} />
+      <rect x="7.2" y="7.2" width="27.8" height="7.2" rx="0.8" fill="#050505" />
+      <rect x="20.2" y="7.2" width="1" height="7.2" fill="#2a2a2e" />
+      {[8.6, 11.6].map((y) =>
+        pins.map((x) => <rect key={`${x}-${y}`} x={x} y={y} width="0.9" height="1.5" rx="0.2" fill="#d4d4d8" />),
+      )}
+      <rect x="6.6" y="4.4" width="31" height="1.8" rx="0.9" fill="#52525b" />
+      <rect x="7.4" y="4.6" width="29.4" height="0.5" rx="0.25" fill="#fff" opacity="0.3" />
+      <circle cx="7.6" cy="5.3" r="1" fill={`url(#${id}u)`} />
+      <rect x="36.4" y="4.2" width="5.4" height="11.4" rx="1.2" fill="#3f3f46" />
+      <rect x="36.9" y="4.6" width="4.4" height="0.6" rx="0.3" fill="#fff" opacity="0.3" />
+      <path d="M37.4 7.6h3.4M37.4 9.2h3.4M37.4 10.8h3.4M37.4 12.4h3.4" stroke="#18181b" strokeWidth="0.6" />
+      {/* the CAN chip that talks to the rest of the car, its crystal, and a red-striped test sticker */}
+      <g fill="#a1a1aa">
+        {[7.25, 8.55, 9.85, 11.15].map((x) => (
+          <g key={x}>
+            <rect x={x} y="18.8" width="0.6" height="1.2" />
+            <rect x={x} y="23.2" width="0.6" height="1.2" />
+          </g>
+        ))}
+      </g>
+      <Chip x={6.8} y={19.8} w={5.4} h={3.6} />
+      <rect x="7" y="26.2" width="5" height="2.8" rx="1.4" fill="#71717a" />
+      <rect x="7" y="26.2" width="5" height="2.3" rx="1.15" fill={`url(#${id}u)`} />
+      <rect x="6.4" y="30.6" width="7.2" height="4.8" rx="0.4" fill="#f4f4f5" />
+      <path d="M6.4 32V31a.4.4 0 0 1 .4-.4h6.4a.4.4 0 0 1 .4.4v1z" fill="#dc2626" />
+      <g fill="#3f3f46">
+        {barcode.map(([x, w]) => (
+          <rect key={x} x={x} y="32.7" width={w} height="1.9" />
+        ))}
+      </g>
+      {/* the brain: a big square chip with legs on all four sides */}
+      <g fill="#a1a1aa">
+        {legs.map((i) => (
+          <g key={i}>
+            <rect x={17.1 + i * 1.2} y="19.2" width="0.6" height="1.4" />
+            <rect x={17.1 + i * 1.2} y="29.4" width="0.6" height="1.4" />
+            <rect x="15.2" y={21.1 + i * 1.2} width="1.4" height="0.6" />
+            <rect x="25.4" y={21.1 + i * 1.2} width="1.4" height="0.6" />
+          </g>
+        ))}
+      </g>
+      <Chip x={16.5} y={20.5} w={9} h={9} />
+      <circle cx="17.8" cy="21.9" r="0.45" fill="#52525b" />
+      <rect x="18.8" y="24.2" width="4.6" height="0.6" rx="0.3" fill="#d4d4d8" opacity="0.4" />
+      <rect x="18.8" y="25.8" width="3.2" height="0.6" rx="0.3" fill="#d4d4d8" opacity="0.3" />
+      {/* six little lights that blink while the engine runs */}
+      {[0, 1, 2, 3, 4, 5].map((i) => {
+        const x = round(16.3 + i * 2.1)
+        const lit = i !== 2 && i !== 5
+        return (
+          <g key={i}>
+            {lit && <circle cx={x} cy="34.5" r="1.2" fill="#fcd34d" opacity="0.5" />}
+            <rect x={x - 0.45} y="33.9" width="0.9" height="1.2" rx="0.2" fill={lit ? '#f59e0b' : '#78350f'} />
+          </g>
+        )
+      })}
+      {/* two aluminium capacitors, and the three power drivers with their metal tabs */}
+      {[31.2, 37.4].map((cx) => (
+        <g key={cx}>
+          <path d={`M${cx - 2.5} 19.6v4.6a2.5 1.1 0 0 0 5 0v-4.6z`} fill={`url(#${id}c)`} />
+          <rect x={cx + 0.7} y="20.4" width="0.9" height="4.6" fill="#a1a1aa" opacity="0.55" />
+          <ellipse cx={cx} cy="19.6" rx="2.5" ry="1.1" fill={`url(#${id}u)`} />
+          <path d={`M${cx - 1.2} 19.6h2.4M${cx} 19v1.2`} stroke="#8b8b94" strokeWidth="0.35" />
+        </g>
+      ))}
+      {[30.4, 35.6, 40.8].map((cx) => (
+        <g key={cx}>
+          <rect x={cx - 1.5} y="26.4" width="0.8" height="1.8" fill="#d4d4d8" />
+          <rect x={cx + 0.7} y="26.4" width="0.8" height="1.8" fill="#d4d4d8" />
+          <rect x={cx - 2.3} y="30.4" width="4.6" height="3.8" rx="0.4" fill={`url(#${id}u)`} />
+          <rect x={cx - 2.1} y="27.8" width="4.2" height="4.8" rx="0.4" fill="#000" />
+          <rect x={cx - 2.1} y="27.8" width="4.2" height="4.2" rx="0.4" fill="#2a2a2e" />
+          <rect x={cx - 1.6} y="28.2" width="3.2" height="0.5" rx="0.25" fill="#fff" opacity="0.15" />
+        </g>
+      ))}
+    </>
+  )
+}
+
+/** A factory controller clipped onto its rail: screw terminals for the wires, a little screen and its lights. */
+function Plc({ id }: ArtProps) {
+  const screws = Array.from({ length: 8 }, (_, i) => 9.4 + i * 4.2)
+  const outputs = [true, false, true, true, false, true]
+  const keys: [number, number][] = [
+    [30.4, 17.8],
+    [30.4, 22.6],
+    [28, 20.2],
+    [32.8, 20.2],
+    [37.4, 18],
+    [37.4, 22.4],
+  ]
+  // a row of green screw terminals; wires go in from the top (or bottom) edge
+  const terminals = (y: number, top: boolean) => (
+    <g>
+      <rect x="7" y={y} width="34" height="5.4" rx="0.8" fill="#14532d" />
+      <rect x="7" y={y} width="34" height="4.6" rx="0.8" fill={`url(#${id}g)`} />
+      {screws.slice(1).map((x) => (
+        <rect key={x} x={x - 2.3} y={y} width="0.4" height="4.6" fill="#14532d" opacity="0.7" />
+      ))}
+      {screws.map((x) => {
+        const cy = top ? y + 2.9 : y + 1.7
+        return (
+          <g key={x}>
+            <rect x={x - 1} y={top ? y + 0.4 : y + 3.2} width="2" height="1" rx="0.3" fill="#052e16" />
+            <circle cx={x} cy={cy} r="1.25" fill={`url(#${id}u)`} />
+            <path d={`M${x - 0.8} ${cy + 0.4}l1.6-0.8`} stroke="#52525b" strokeWidth="0.4" strokeLinecap="round" />
+          </g>
+        )
+      })}
+    </g>
+  )
+  return (
+    <>
+      <defs>
+        <Silver id={id} />
+        <linearGradient id={`${id}h`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#fafafa" />
+          <stop offset="0.55" stopColor="#e4e4e7" />
+          <stop offset="1" stopColor="#a1a1aa" />
+        </linearGradient>
+        <linearGradient id={`${id}g`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#4ade80" />
+          <stop offset="0.4" stopColor="#22c55e" />
+          <stop offset="1" stopColor="#15803d" />
+        </linearGradient>
+        <linearGradient id={`${id}f`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#3f3f46" />
+          <stop offset="1" stopColor="#18181b" />
+        </linearGradient>
+        <linearGradient id={`${id}l`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#a7f3e0" />
+          <stop offset="1" stopColor="#4fb8a8" />
+        </linearGradient>
+      </defs>
+      <Shadow y={42.5} rx={21} />
+      {/* the metal rail it clips onto */}
+      <rect x="1" y="19.6" width="46" height="8.4" rx="0.4" fill={`url(#${id}u)`} />
+      <rect x="1" y="21" width="46" height="5.6" fill="#a1a1aa" />
+      <rect x="1" y="21" width="46" height="0.6" fill="#71717a" />
+      {[2.6, 45.4].map((x) => (
+        <rect key={x} x={x - 0.7} y="22.4" width="1.4" height="2.8" rx="0.7" fill="#52525b" />
+      ))}
+      {/* the light grey case with its terminals top and bottom */}
+      <rect x="4" y="6" width="40" height="34" rx="3" fill="#71717a" transform="translate(0 1.2)" />
+      <rect x="4" y="6" width="40" height="34" rx="3" fill={`url(#${id}h)`} />
+      <rect x="6.5" y="6.5" width="35" height="0.9" rx="0.45" fill="#fff" />
+      {terminals(7.8, true)}
+      {terminals(33.2, false)}
+      {/* the dark front: the screen, the keys, the lights and a teal stripe */}
+      <rect x="7" y="14.4" width="34" height="17.6" rx="1.6" fill={`url(#${id}f)`} />
+      <path d="M7 29.8h34v0.6a1.6 1.6 0 0 1-1.6 1.6H8.6A1.6 1.6 0 0 1 7 30.4z" fill="#0d9488" />
+      <rect x="7.6" y="15" width="32.8" height="0.6" rx="0.3" fill="#fff" opacity="0.15" />
+      <rect x="9" y="16.4" width="15.6" height="8.6" rx="0.8" fill="#0a0a0a" />
+      <rect x="9.8" y="17.2" width="14" height="7" rx="0.4" fill={`url(#${id}l)`} />
+      <g fill="#134e4a" opacity="0.85">
+        <rect x="11" y="18.4" width="6.6" height="1.1" rx="0.2" />
+        <rect x="11" y="20.6" width="3.6" height="1.1" rx="0.2" />
+        <rect x="15.6" y="20.6" width="5.4" height="1.1" rx="0.2" />
+        <rect x="11" y="22.5" width="9" height="0.6" rx="0.2" opacity="0.5" />
+      </g>
+      <rect x="10.2" y="17.6" width="13.2" height="0.5" rx="0.25" fill="#fff" opacity="0.45" />
+      {keys.map(([x, y]) => (
+        <g key={`${x}-${y}`}>
+          <rect x={x - 1} y={y - 1} width="2" height="2" rx="0.5" fill="#09090b" />
+          <rect x={x - 1} y={y - 1} width="2" height="1.6" rx="0.5" fill="#52525b" />
+        </g>
+      ))}
+      {/* six output lights, then RUN (on) and ERR */}
+      {outputs.map((on, i) =>
+        on ? (
+          <Glow key={i} cx={10.4 + i * 2.6} cy={27.2} color="#22c55e" halo="#4ade80" />
+        ) : (
+          <circle key={i} cx={10.4 + i * 2.6} cy="27.2" r="0.7" fill="#14532d" />
+        ),
+      )}
+      <Glow cx={30.6} cy={27.2} color="#22c55e" halo="#4ade80" />
+      <circle cx="35.6" cy="27.2" r="0.75" fill="#dc2626" />
+      <rect x="31.8" y="26.9" width="2" height="0.6" rx="0.3" fill="#a1a1aa" opacity="0.6" />
+      <rect x="36.8" y="26.9" width="2" height="0.6" rx="0.3" fill="#a1a1aa" opacity="0.6" />
+    </>
+  )
+}
+
+/** An oil-well radio box: a tough board in an orange tray, a battery for when the power fails, and a stubby antenna. */
+function Rtu({ id }: ArtProps) {
+  const leds: [string, string][] = [
+    ['#22c55e', '#4ade80'],
+    ['#22c55e', '#4ade80'],
+    ['#f59e0b', '#fcd34d'],
+    ['#f59e0b', '#fcd34d'],
+    ['#3b82f6', '#93c5fd'],
+    ['#ef4444', '#f87171'],
+  ]
+  return (
+    <>
+      <defs>
+        <Silver id={id} />
+        <linearGradient id={`${id}o`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#fdba74" />
+          <stop offset="0.3" stopColor="#f97316" />
+          <stop offset="1" stopColor="#c2410c" />
+        </linearGradient>
+        <linearGradient id={`${id}b`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#93c5fd" />
+          <stop offset="0.35" stopColor="#2563eb" />
+          <stop offset="1" stopColor="#1e3a8a" />
+        </linearGradient>
+        <linearGradient id={`${id}g`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#a16207" />
+          <stop offset="0.4" stopColor="#fde68a" />
+          <stop offset="1" stopColor="#b45309" />
+        </linearGradient>
+        <linearGradient id={`${id}a`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#27272a" />
+          <stop offset="0.35" stopColor="#52525b" />
+          <stop offset="1" stopColor="#09090b" />
+        </linearGradient>
+        <linearGradient id={`${id}t`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#4ade80" />
+          <stop offset="1" stopColor="#16a34a" />
+        </linearGradient>
+      </defs>
+      <Shadow y={42.5} rx={21} />
+      {/* the safety-orange tray */}
+      <rect x="2.5" y="13.4" width="43" height="26.6" rx="3.2" fill="#9a3412" transform="translate(0 1.6)" />
+      <rect x="2.5" y="13.4" width="43" height="26.6" rx="3.2" fill={`url(#${id}o)`} />
+      <rect x="5" y="13.9" width="38" height="0.8" rx="0.4" fill="#fff" opacity="0.45" />
+      <rect x="4.6" y="15.4" width="38.8" height="22.6" rx="1.8" fill="#7c2d12" />
+      <Pcb id={id} x={5.4} y={16} w={37.2} h={20.2} light="#3a4556" dark="#111827" edge="#030712" holes={[[7.8, 18.4], [7.8, 33.8]]} />
+      {/* green screw terminals for the well's sensors and pump */}
+      <rect x="10.2" y="17.2" width="14.4" height="5.6" rx="0.6" fill="#14532d" />
+      <rect x="10.2" y="17.2" width="14.4" height="4.8" rx="0.6" fill={`url(#${id}t)`} />
+      {[12, 15.6, 19.2, 22.8].map((x) => (
+        <g key={x}>
+          <circle cx={x} cy="19.3" r="1.3" fill={`url(#${id}u)`} />
+          <path d={`M${x - 0.8} 19.7l1.6-0.8`} stroke="#52525b" strokeWidth="0.4" strokeLinecap="round" />
+          <rect x={x - 1} y="21.3" width="2" height="1" rx="0.3" fill="#052e16" />
+        </g>
+      ))}
+      {leds.map(([color, halo], i) => (
+        <Glow key={i} cx={10.8 + i * 2.4} cy={25.3} color={color} halo={halo} />
+      ))}
+      {/* the radio in its silver can, its gold connector and the stubby antenna standing up */}
+      <Box x={26.4} y={17.4} w={10.4} h={9} top={`url(#${id}u)`} front="#71717a" />
+      <rect x="27.2" y="18" width="8.8" height="0.5" rx="0.25" fill="#fff" opacity="0.8" />
+      <g fill="#a1a1aa">
+        <circle cx="27.6" cy="19.6" r="0.35" />
+        <circle cx="35.6" cy="19.6" r="0.35" />
+        <circle cx="27.6" cy="24.2" r="0.35" />
+        <circle cx="35.6" cy="24.2" r="0.35" />
+        <rect x="29" y="20.9" width="5.2" height="0.6" rx="0.3" />
+        <rect x="29" y="22.3" width="3.6" height="0.6" rx="0.3" />
+      </g>
+      <rect x="37.6" y="18.6" width="4.2" height="4" rx="0.4" fill="#92400e" />
+      <rect x="37.6" y="18.6" width="4.2" height="3.4" rx="0.4" fill={`url(#${id}g)`} />
+      <rect x="38.1" y="14.4" width="3.2" height="5.4" rx="0.3" fill={`url(#${id}g)`} />
+      <path d="M38.1 16.4h3.2M38.1 18h3.2" stroke="#92400e" strokeWidth="0.35" opacity="0.7" />
+      <rect x="37.9" y="2.6" width="3.6" height="10.4" rx="1.8" fill={`url(#${id}a)`} />
+      <rect x="38.6" y="4" width="0.6" height="7.4" rx="0.3" fill="#fff" opacity="0.25" />
+      <rect x="37.7" y="11.6" width="4" height="3.4" rx="0.6" fill="#18181b" />
+      <path d="M38.2 12.5h3M38.2 13.5h3M38.2 14.5h3" stroke="#3f3f46" strokeWidth="0.4" />
+      {/* the 18650 battery that keeps it talking when the power is out */}
+      <rect x="10" y="27.4" width="22.4" height="8.2" rx="1" fill="#000" />
+      <rect x="10" y="27.4" width="22.4" height="7.4" rx="1" fill="#27272a" />
+      <rect x="11" y="28.2" width="20.4" height="5.8" rx="0.6" fill="#0a0a0a" />
+      <path d="M11.5 29v4.2M12.2 29v4.2" stroke="#d4d4d8" strokeWidth="0.4" />
+      <rect x="12.6" y="28.4" width="17.4" height="5.4" rx="2.4" fill={`url(#${id}b)`} />
+      <rect x="29.6" y="29.8" width="1.4" height="2.6" rx="0.5" fill={`url(#${id}u)`} />
+      <rect x="27.4" y="28.4" width="0.6" height="5.4" fill="#dbeafe" opacity="0.7" />
+      <rect x="14" y="29.1" width="12.8" height="0.8" rx="0.4" fill="#fff" opacity="0.45" />
+      <path d="M15.4 31.4h5.4M15.4 32.6h3.2" stroke="#bfdbfe" strokeWidth="0.5" strokeLinecap="round" opacity="0.6" />
+      {/* the little computer that reads the well */}
+      <g fill="#a1a1aa">
+        {[35.2, 36.4, 37.6, 38.8].map((x) => (
+          <g key={x}>
+            <rect x={x} y="27.8" width="0.6" height="1.2" />
+            <rect x={x} y="33.4" width="0.6" height="1.2" />
+          </g>
+        ))}
+      </g>
+      <Chip x={34.4} y={28.6} w={5.4} h={5.2} />
+      <circle cx="35.4" cy="29.8" r="0.4" fill="#52525b" />
+    </>
+  )
+}
+
 /* ---- screens ---- */
 
 const round = (n: number) => +n.toFixed(2)
@@ -3878,6 +4199,458 @@ function LogicProbe({ id }: ArtProps) {
   )
 }
 
+/* ---- radio, network and industrial modules ---- */
+
+/** A text-message module: the SIM card holder, the radio in its silver can and a springy coil antenna. */
+function Gsm({ id }: ArtProps) {
+  // the coil antenna one turn at a time: the back halves dark, the front halves bright copper
+  const turns = Array.from({ length: 9 }, (_, i) => round(5.4 + i * 1.6))
+  const front = turns.map((y) => `M10.4 ${y}A2 0.9 0 0 0 14.4 ${round(y + 0.8)}`).join('')
+  const back = turns.map((y) => `M14.4 ${round(y + 0.8)}A2 0.9 0 0 0 10.4 ${round(y + 1.6)}`).join('')
+  return (
+    <>
+      <defs>
+        <Silver id={id} />
+        <linearGradient id={`${id}k`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#9a3412" />
+          <stop offset="0.35" stopColor="#fdba74" />
+          <stop offset="0.7" stopColor="#c2410c" />
+          <stop offset="1" stopColor="#7c2d12" />
+        </linearGradient>
+        <linearGradient id={`${id}s`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#fde68a" />
+          <stop offset="0.5" stopColor="#eab308" />
+          <stop offset="1" stopColor="#a16207" />
+        </linearGradient>
+      </defs>
+      <Shadow y={42.5} rx={17} />
+      <Legs xs={[12.4, 15.4, 18.4]} y={34} len={8} />
+      <Pcb id={id} x={8} y={18} w={32} h={17.6} light="#a3243b" dark="#5c1020" edge="#3a0812" />
+      <Strip x={10.9} y={32} w={9} />
+      {/* the radio in its silver can */}
+      <Box x={16} y={20} w={11} h={10.4} top={`url(#${id}u)`} front="#71717a" />
+      <rect x="16.8" y="20.5" width="9.4" height="0.5" rx="0.25" fill="#fff" opacity="0.8" />
+      <g fill="#a1a1aa">
+        <circle cx="17.6" cy="22.2" r="0.45" />
+        <rect x="18.8" y="23.6" width="6" height="0.6" rx="0.3" />
+        <rect x="18.8" y="25.2" width="4.4" height="0.6" rx="0.3" />
+        <rect x="18.8" y="26.8" width="5.2" height="0.6" rx="0.3" />
+      </g>
+      {/* the SIM card holder, the card's gold chip showing through */}
+      <rect x="28.8" y="19.6" width="9.6" height="12.6" rx="0.8" fill="#71717a" />
+      <rect x="28.8" y="19.6" width="9.6" height="11.8" rx="0.8" fill={`url(#${id}u)`} />
+      <rect x="30.2" y="21.6" width="6.8" height="5.4" rx="0.9" fill="#3f3f46" />
+      <rect x="30.6" y="22" width="6" height="4.6" rx="0.7" fill={`url(#${id}s)`} />
+      <path d="M33.6 22v4.6M30.6 23.5h2.2M30.6 25.1h2.2M34.6 23.5h2M34.6 25.1h2" stroke="#a16207" strokeWidth="0.35" />
+      <path d="M30.2 28.6h6.8M30.2 29.9h6.8" stroke="#a1a1aa" strokeWidth="0.5" strokeLinecap="round" />
+      {/* the network light, blinking as it finds the phone towers */}
+      <rect x="21.6" y="32.4" width="2.2" height="1.2" rx="0.2" fill="#d4d4d8" />
+      <rect x="22.1" y="32.4" width="1.2" height="1.2" fill="#b08850" />
+      <Glow cx={26.8} cy={33.2} color="#ef4444" halo="#f87171" />
+      {/* the copper coil antenna standing on its pad */}
+      <ellipse cx="12.4" cy="20.6" rx="2.4" ry="1" fill="#eab308" />
+      <path d={back} fill="none" stroke="#7c2d12" strokeWidth="0.7" strokeLinecap="round" />
+      <path d={front} fill="none" stroke={`url(#${id}k)`} strokeWidth="0.85" strokeLinecap="round" />
+      <path d="M10.4 19.8 12.4 20.6" stroke="#c2410c" strokeWidth="0.85" strokeLinecap="round" />
+    </>
+  )
+}
+
+/** A tiny Wi-Fi module: its gold zig-zag antenna sends and catches the radio waves. */
+function Wifi({ id }: ArtProps) {
+  return (
+    <>
+      <defs>
+        <Silver id={id} />
+      </defs>
+      <Shadow y={38.5} rx={19} />
+      <Pcb id={id} x={5} y={18} w={36} h={15} light="#3f3f46" dark="#141417" edge="#000" />
+      {/* the 2 × 4 pin header at one end */}
+      <rect x="6.4" y="19.4" width="5.8" height="12.6" rx="0.5" fill="#0a0a0a" />
+      <rect x="6.4" y="19.4" width="5.8" height="11.8" rx="0.5" fill="#2a2a2e" />
+      {[7.95, 10.65].map((x) =>
+        [21.2, 23.9, 26.6, 29.3].map((y) => (
+          <g key={`${x}-${y}`}>
+            <rect x={x - 0.6} y={y - 0.6} width="1.2" height="1.2" rx="0.15" fill="#eab308" />
+            <rect x={x - 0.6} y={y - 0.6} width="1.2" height="0.4" rx="0.15" fill="#fde68a" />
+          </g>
+        )),
+      )}
+      {/* the radio chip, its memory chip, the crystal and the blue light */}
+      <Chip x={14.6} y={20.6} w={7} h={7} />
+      <circle cx="15.6" cy="21.6" r="0.4" fill="#52525b" />
+      <rect x="16" y="23.6" width="4.2" height="0.6" rx="0.3" fill="#d4d4d8" opacity="0.4" />
+      <g fill="#a1a1aa">
+        {[24.3, 25.5, 26.7, 27.9].map((x) => (
+          <g key={x}>
+            <rect x={x - 0.25} y="21.3" width="0.5" height="1" />
+            <rect x={x - 0.25} y="26.3" width="0.5" height="1" />
+          </g>
+        ))}
+      </g>
+      <Chip x={23.6} y={22.1} w={5} h={4.4} />
+      <rect x="15.2" y="29" width="3.6" height="2.4" rx="0.5" fill="#71717a" />
+      <rect x="15.2" y="29" width="3.6" height="1.9" rx="0.5" fill={`url(#${id}u)`} />
+      <Glow cx={22.6} cy={30.2} color="#3b82f6" halo="#60a5fa" />
+      {/* the zig-zag antenna, and the waves it sends */}
+      <path
+        d="M31.2 19.8h7.6v2h-7.6v2h7.6v2h-7.6v2h7.6v2h-7.6v2h7.6"
+        fill="none"
+        stroke="#eab308"
+        strokeWidth="0.75"
+        strokeLinejoin="round"
+      />
+      <g fill="none" stroke="#38bdf8" strokeWidth="1" strokeLinecap="round">
+        <path d="M32.88 14.88A3 3 0 0 1 37.12 14.88" opacity="0.95" />
+        <path d="M31.18 13.18A5.4 5.4 0 0 1 38.82 13.18" opacity="0.7" />
+        <path d="M29.48 11.48A7.8 7.8 0 0 1 40.52 11.48" opacity="0.45" />
+      </g>
+      <circle cx="35" cy="16.6" r="0.8" fill="#38bdf8" />
+    </>
+  )
+}
+
+/** A Bluetooth module: a little green radio board with its own antenna, riding on a blue carrier. */
+function Bluetooth({ id }: ArtProps) {
+  const pins = [18, 20.6, 23.2, 25.8, 28.4, 31]
+  const pads = Array.from({ length: 9 }, (_, i) => round(15.6 + i * 1.8))
+  return (
+    <>
+      <defs>
+        <Silver id={id} />
+      </defs>
+      <Shadow y={39.5} rx={20} />
+      {/* six pins out of the end */}
+      {pins.map((y) => (
+        <rect key={y} x="1.4" y={y - 0.55} width="5" height="1.1" rx="0.4" fill="#a1a1aa" />
+      ))}
+      <Pcb id={id} x={5} y={15.8} w={38} h={18} light="#38bdf8" dark="#0284c7" edge="#075985" />
+      <rect x="5.4" y="16.6" width="3" height="16.4" rx="0.4" fill="#0a0a0a" />
+      <rect x="5.4" y="16.6" width="3" height="15.6" rx="0.4" fill="#2a2a2e" />
+      {pins.map((y) => (
+        <rect key={y} x="6.3" y={y - 0.6} width="1.2" height="1.2" fill="#71717a" />
+      ))}
+      {/* the red status light and the tiny button */}
+      <Glow cx={11.2} cy={19.8} color="#ef4444" halo="#f87171" />
+      <rect x="9.8" y="25" width="2.8" height="3.2" rx="0.4" fill="#71717a" />
+      <rect x="9.8" y="25" width="2.8" height="2.7" rx="0.4" fill="#d4d4d8" />
+      <circle cx="11.2" cy="26.3" r="0.9" fill="#18181b" />
+      {/* the green radio board on top: chip, memory and its own zig-zag antenna */}
+      <Pcb id={`${id}m`} x={14} y={17.4} w={27.6} h={12.4} light="#22a04b" dark="#14532d" edge="#052e16" />
+      {pads.map((x) => (
+        <g key={x}>
+          <rect x={x - 0.5} y="17.4" width="1" height="1.4" rx="0.2" fill="#eab308" />
+          <rect x={x - 0.5} y="28.4" width="1" height="1.4" rx="0.2" fill="#eab308" />
+        </g>
+      ))}
+      <Chip x={16.4} y={20} w={7} h={7} />
+      <circle cx="17.4" cy="21" r="0.4" fill="#52525b" />
+      <rect x="17.8" y="23" width="4.2" height="0.6" rx="0.3" fill="#d4d4d8" opacity="0.4" />
+      <Chip x={25} y={21.2} w={3.6} h={4.8} />
+      <rect x="31.8" y="18.6" width="9" height="9.8" rx="0.4" fill="#4ade80" opacity="0.15" />
+      <path d="M33 19.6v8h1.8v-8h1.8v8h1.8v-8h1.8v8" fill="none" stroke="#eab308" strokeWidth="0.7" strokeLinejoin="round" />
+    </>
+  )
+}
+
+/** A LoRa radio that reaches kilometres: a violet board, its radio can and a tall rubber antenna. */
+function Lora({ id }: ArtProps) {
+  return (
+    <>
+      <defs>
+        <Silver id={id} />
+        <linearGradient id={`${id}g`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#a16207" />
+          <stop offset="0.4" stopColor="#fde68a" />
+          <stop offset="1" stopColor="#b45309" />
+        </linearGradient>
+        <linearGradient id={`${id}a`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#27272a" />
+          <stop offset="0.35" stopColor="#52525b" />
+          <stop offset="1" stopColor="#09090b" />
+        </linearGradient>
+      </defs>
+      <Shadow y={43} rx={19} />
+      <Legs xs={[10.5, 13.5, 16.5, 19.5, 22.5, 25.5]} y={33} len={8.5} />
+      <Pcb id={id} x={5} y={22} w={36} h={13} light="#8b5cf6" dark="#5b21b6" edge="#3b0764" holes={[[7.6, 24.6]]} />
+      <Strip x={9} y={31.4} w={18} />
+      {/* the radio in its silver can */}
+      <Box x={10.4} y={23.2} w={15.4} h={7.2} top={`url(#${id}u)`} front="#71717a" />
+      <rect x="11.2" y="23.7" width="13.8" height="0.5" rx="0.25" fill="#fff" opacity="0.8" />
+      <g fill="#a1a1aa">
+        <circle cx="11.8" cy="25.4" r="0.4" />
+        <rect x="13.4" y="25.6" width="7" height="0.6" rx="0.3" />
+        <rect x="13.4" y="27.2" width="5" height="0.6" rx="0.3" />
+      </g>
+      <Glow cx={28.4} cy={25.4} color="#ef4444" halo="#f87171" />
+      <rect x="27.2" y="28.4" width="2.4" height="1.3" rx="0.2" fill="#d4d4d8" />
+      <rect x="27.7" y="28.4" width="1.4" height="1.3" fill="#b08850" />
+      {/* the gold connector, and the tall rubber antenna screwed onto it */}
+      <rect x="31" y="25.6" width="5.6" height="5" rx="0.5" fill="#92400e" />
+      <rect x="31" y="25.6" width="5.6" height="4.2" rx="0.5" fill={`url(#${id}g)`} />
+      <rect x="32.2" y="21.2" width="3.2" height="5.2" rx="0.3" fill={`url(#${id}g)`} />
+      <path d="M32.2 23h3.2M32.2 24.6h3.2" stroke="#92400e" strokeWidth="0.35" opacity="0.7" />
+      <path d="M32.2 17 32.8 3.4a1 1 0 0 1 2 0L35.4 17z" fill={`url(#${id}a)`} />
+      <rect x="33.3" y="4.2" width="0.5" height="11.6" rx="0.25" fill="#fff" opacity="0.25" />
+      <rect x="31.8" y="16.2" width="4" height="5.6" rx="1.2" fill="#18181b" />
+      <rect x="32.4" y="16.6" width="2.8" height="0.5" rx="0.25" fill="#fff" opacity="0.2" />
+      <circle cx="33.8" cy="19" r="1" fill="#3f3f46" />
+    </>
+  )
+}
+
+/** A GPS module: the square ceramic antenna listens for satellites; a coin cell keeps its clock running. */
+function Gps({ id }: ArtProps) {
+  return (
+    <>
+      <defs>
+        <Silver id={id} />
+        <linearGradient id={`${id}c`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#f7eedc" />
+          <stop offset="0.55" stopColor="#e6d3ab" />
+          <stop offset="1" stopColor="#c9ac7a" />
+        </linearGradient>
+        <radialGradient id={`${id}d`} cx="0.35" cy="0.3" r="0.8">
+          <stop offset="0" stopColor="#ffffff" />
+          <stop offset="1" stopColor="#8b8b94" />
+        </radialGradient>
+      </defs>
+      <Shadow y={42} rx={20} />
+      <Legs xs={[27.5, 30.5, 33.5, 36.5]} y={35} len={6} />
+      <Pcb id={id} x={4} y={13} w={40} h={24} light="#3b82f6" dark="#1e40af" edge="#172554" holes={[[41.4, 15.6], [41.4, 34.4]]} />
+      <Strip x={26} y={33.4} w={12} />
+      {/* the ceramic patch antenna, its feed pin a shiny dot */}
+      <rect x="7.6" y="17.6" width="16.4" height="16.4" rx="1" fill="#0b1d4a" opacity="0.4" />
+      <rect x="6.4" y="15" width="16" height="18.2" rx="1" fill="#a3875a" />
+      <rect x="6.4" y="15" width="16" height="16" rx="1" fill={`url(#${id}c)`} />
+      <rect x="7.2" y="15.5" width="14.4" height="0.6" rx="0.3" fill="#fff" opacity="0.7" />
+      <rect x="8.8" y="17.4" width="11.2" height="11.2" rx="0.4" fill="#ded0b4" stroke="#c9ac7a" strokeWidth="0.4" />
+      <circle cx="16.4" cy="21.6" r="1.5" fill="#71717a" />
+      <circle cx="16.4" cy="21.4" r="1.3" fill={`url(#${id}d)`} />
+      {/* the receiver in its silver can, the backup coin cell and the green time-pulse light */}
+      <Box x={26} y={15.6} w={12.6} h={10.4} top={`url(#${id}u)`} front="#71717a" />
+      <rect x="26.8" y="16.1" width="11" height="0.5" rx="0.25" fill="#fff" opacity="0.8" />
+      <g fill="#a1a1aa">
+        <circle cx="27.6" cy="17.8" r="0.45" />
+        <rect x="28.8" y="19.4" width="7.4" height="0.6" rx="0.3" />
+        <rect x="28.8" y="21" width="5.2" height="0.6" rx="0.3" />
+        <rect x="28.8" y="22.6" width="6.2" height="0.6" rx="0.3" />
+      </g>
+      <Glow cx={28.6} cy={29.4} color="#22c55e" halo="#4ade80" />
+      <Chip x={31.6} y={28.2} w={3.2} h={2.6} />
+      <circle cx="40.4" cy="29.4" r="2.7" fill="#71717a" />
+      <circle cx="40.4" cy="29" r="2.6" fill={`url(#${id}d)`} />
+      <path d="M39 28.6h1.4M39.7 27.9v1.4" stroke="#52525b" strokeWidth="0.4" strokeLinecap="round" />
+    </>
+  )
+}
+
+/** A CAN-bus module, the network inside cars: the controller chip, its crystal and a terminal for CAN-H and CAN-L. */
+function CanBus({ id }: ArtProps) {
+  const pins = Array.from({ length: 7 }, (_, i) => round(17.6 + i * 2.3))
+  const legs = Array.from({ length: 9 }, (_, i) => round(11.8 + i * 1.25))
+  return (
+    <>
+      <defs>
+        <Silver id={id} />
+        <linearGradient id={`${id}t`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#4ade80" />
+          <stop offset="1" stopColor="#16a34a" />
+        </linearGradient>
+      </defs>
+      <Shadow y={40.5} rx={20} />
+      {pins.map((y) => (
+        <rect key={y} x="1.6" y={y - 0.55} width="4.6" height="1.1" rx="0.4" fill="#a1a1aa" />
+      ))}
+      <Pcb id={id} x={4} y={14} w={40} h={22} light="#3b82f6" dark="#1d4ed8" edge="#1e3a8a" holes={[[41.4, 33.4]]} />
+      <rect x="4.6" y="15.8" width="3" height="17.2" rx="0.4" fill="#0a0a0a" />
+      <rect x="4.6" y="15.8" width="3" height="16.4" rx="0.4" fill="#2a2a2e" />
+      {pins.map((y) => (
+        <rect key={y} x="5.5" y={y - 0.6} width="1.2" height="1.2" fill="#71717a" />
+      ))}
+      {/* the CAN controller chip and its crystal */}
+      <g fill="#a1a1aa">
+        {legs.map((x) => (
+          <g key={x}>
+            <rect x={x - 0.3} y="17.3" width="0.6" height="1.2" />
+            <rect x={x - 0.3} y="22.9" width="0.6" height="1.2" />
+          </g>
+        ))}
+      </g>
+      <Chip x={11} y={18.4} w={11.6} h={4.6} />
+      <circle cx="12" cy="19.6" r="0.4" fill="#52525b" />
+      <rect x="13.4" y="20.2" width="6.4" height="0.6" rx="0.3" fill="#d4d4d8" opacity="0.4" />
+      <rect x="11.6" y="27" width="8.8" height="4.4" rx="2.2" fill="#71717a" />
+      <rect x="11.6" y="27" width="8.8" height="3.8" rx="1.9" fill={`url(#${id}u)`} />
+      <rect x="13" y="27.5" width="6" height="0.6" rx="0.3" fill="#fff" opacity="0.9" />
+      {[27.3, 29.5].map((y) => (
+        <g key={y}>
+          <rect x="21.6" y={y} width="2.2" height="1.2" rx="0.2" fill="#d4d4d8" />
+          <rect x="22.1" y={y} width="1.2" height="1.2" fill="#b08850" />
+        </g>
+      ))}
+      {/* an amber tantalum capacitor and the transceiver that drives the two bus wires */}
+      <rect x="25.2" y="19.4" width="4.2" height="1.8" rx="0.2" fill="#a1a1aa" />
+      <rect x="25.6" y="19" width="3.4" height="2.4" rx="0.3" fill="#ca8a04" />
+      <rect x="25.6" y="19" width="0.8" height="2.4" fill="#713f12" />
+      <rect x="26.6" y="19.3" width="2.2" height="0.5" rx="0.25" fill="#fde68a" opacity="0.7" />
+      <g fill="#a1a1aa">
+        {[26.1, 27.4, 28.6, 29.9].map((x) => (
+          <g key={x}>
+            <rect x={x - 0.3} y="25.2" width="0.6" height="1.2" />
+            <rect x={x - 0.3} y="30.1" width="0.6" height="1.2" />
+          </g>
+        ))}
+      </g>
+      <Chip x={25.4} y={26.2} w={5.2} h={4} />
+      {[21.4, 23.8].map((y) => (
+        <g key={y}>
+          <rect x="31.6" y={y} width="2.4" height="1.3" rx="0.2" fill="#d4d4d8" />
+          <rect x="32.1" y={y} width="1.4" height="1.3" fill="#141416" />
+        </g>
+      ))}
+      <Glow cx={32.8} cy={18.4} color="#ef4444" halo="#f87171" />
+      {/* the green terminal for the CAN-H and CAN-L wires, and the jumper that ends the bus */}
+      <rect x="36.8" y="16.4" width="5.8" height="9" rx="0.6" fill="#14532d" />
+      <rect x="36.8" y="16.4" width="5.8" height="8.2" rx="0.6" fill={`url(#${id}t)`} />
+      {[18.5, 22.5].map((y) => (
+        <g key={y}>
+          <circle cx="39.2" cy={y} r="1.4" fill={`url(#${id}u)`} />
+          <path d={`M38.3 ${y + 0.5}l1.8-1`} stroke="#52525b" strokeWidth="0.45" strokeLinecap="round" />
+          <rect x="41.4" y={y - 1} width="0.9" height="2" rx="0.3" fill="#052e16" />
+        </g>
+      ))}
+      <rect x="36.6" y="27.4" width="4.6" height="3.4" rx="0.4" fill="#000" />
+      <rect x="36.6" y="27.4" width="4.6" height="2.8" rx="0.4" fill="#27272a" />
+      <rect x="37" y="27.7" width="3.8" height="0.5" rx="0.25" fill="#fff" opacity="0.2" />
+    </>
+  )
+}
+
+/** An RS-485 module: one little chip turns signals into the A and B wires that factory machines talk over. */
+function Rs485({ id }: ArtProps) {
+  return (
+    <>
+      <defs>
+        <Silver id={id} />
+        <linearGradient id={`${id}t`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#60a5fa" />
+          <stop offset="1" stopColor="#1d4ed8" />
+        </linearGradient>
+      </defs>
+      <Shadow y={42} rx={19} />
+      <Legs xs={[10.5, 13.5, 16.5, 19.5]} y={31} len={9} />
+      <Pcb id={id} x={5} y={19} w={38} h={14} light="#6366f1" dark="#3730a3" edge="#1e1b4b" holes={[[7.6, 21.6]]} />
+      <Strip x={9} y={29.4} w={12} />
+      {/* two tiny resistors and the one chip */}
+      {[21.2, 23.8].map((y) => (
+        <g key={y}>
+          <rect x="11" y={y} width="2.6" height="1.3" rx="0.2" fill="#d4d4d8" />
+          <rect x="11.6" y={y} width="1.4" height="1.3" fill="#141416" />
+        </g>
+      ))}
+      <g fill="#a1a1aa">
+        {[18.6, 19.87, 21.13, 22.4].map((x) => (
+          <g key={x}>
+            <rect x={x - 0.3} y="20.6" width="0.6" height="1.2" />
+            <rect x={x - 0.3} y="25.8" width="0.6" height="1.2" />
+          </g>
+        ))}
+      </g>
+      <Chip x={17.4} y={21.6} w={6.2} h={4.4} />
+      <circle cx="18.4" cy="22.7" r="0.4" fill="#52525b" />
+      <rect x="25.6" y="21.4" width="2.2" height="1.2" rx="0.2" fill="#d4d4d8" />
+      <rect x="26.1" y="21.4" width="1.2" height="1.2" fill="#b08850" />
+      <Glow cx={28.4} cy={29.4} color="#ef4444" halo="#f87171" />
+      {/* the blue terminal for the A and B wires */}
+      <g fill="none" stroke="#e0e7ff" strokeWidth="0.5" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M33 23.6l1-2.6 1 2.6M33.4 22.8h1.2" />
+        <path d="M33.2 27.6v-2.6h1a.65.65 0 0 1 0 1.3h-1 1.1a.65.65 0 0 1 0 1.3z" />
+      </g>
+      <rect x="36.4" y="20.2" width="5.8" height="9" rx="0.6" fill="#1e3a8a" />
+      <rect x="36.4" y="20.2" width="5.8" height="8.2" rx="0.6" fill={`url(#${id}t)`} />
+      {[22.3, 26.3].map((y) => (
+        <g key={y}>
+          <circle cx="38.8" cy={y} r="1.4" fill={`url(#${id}u)`} />
+          <path d={`M37.9 ${y + 0.5}l1.8-1`} stroke="#52525b" strokeWidth="0.45" strokeLinecap="round" />
+          <rect x="41" y={y - 1} width="0.9" height="2" rx="0.3" fill="#172554" />
+        </g>
+      ))}
+    </>
+  )
+}
+
+/** A pressure gauge for pipes: the needle shows how hard the oil or water pushes, and the board reads it. */
+function PressureSensor({ id }: ArtProps) {
+  const ticks = Array.from({ length: 21 }, (_, i) => round(-135 + i * 13.5))
+  return (
+    <>
+      <defs>
+        <linearGradient id={`${id}s`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#fafafa" />
+          <stop offset="0.45" stopColor="#c4c4cc" />
+          <stop offset="1" stopColor="#6b6b74" />
+        </linearGradient>
+        <linearGradient id={`${id}r`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#71717a" />
+          <stop offset="1" stopColor="#e4e4e7" />
+        </linearGradient>
+        <radialGradient id={`${id}d`} cx="0.4" cy="0.35" r="0.75">
+          <stop offset="0" stopColor="#ffffff" />
+          <stop offset="1" stopColor="#e4e4e7" />
+        </radialGradient>
+        <linearGradient id={`${id}h`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#a16207" />
+          <stop offset="0.3" stopColor="#fde68a" />
+          <stop offset="0.65" stopColor="#ca8a04" />
+          <stop offset="1" stopColor="#713f12" />
+        </linearGradient>
+        <linearGradient id={`${id}n`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#71717a" />
+          <stop offset="0.4" stopColor="#f4f4f5" />
+          <stop offset="1" stopColor="#52525b" />
+        </linearGradient>
+      </defs>
+      <Shadow y={43.5} rx={15} />
+      <Legs xs={[21, 24, 27]} y={37} len={5.5} />
+      <Pcb id={id} x={10} y={31} w={28} h={7.4} light="#60a5fa" dark="#1d4ed8" edge="#1e3a8a" holes={[[12.6, 33.6]]} />
+      <Strip x={19.5} y={34.8} w={9} />
+      <Glow cx={15.6} cy={35.4} color="#ef4444" halo="#f87171" />
+      <Chip x={30.4} y={32.6} w={4.6} h={3} />
+      {/* the brass fitting that screws into the pipe */}
+      <ellipse cx="24" cy="33.6" rx="3" ry="0.9" fill="#172554" />
+      <rect x="21.6" y="30.6" width="4.8" height="3" fill={`url(#${id}h)`} />
+      <path d="M21.6 31.4h4.8M21.6 32.4h4.8M21.6 33.3h4.8" stroke="#713f12" strokeWidth="0.35" opacity="0.6" />
+      <rect x="22.2" y="24.6" width="3.6" height="3" fill={`url(#${id}n)`} />
+      <path d="M19.6 27.2h8.8l0.8 1.8-0.8 1.8h-8.8l-0.8-1.8z" fill={`url(#${id}h)`} />
+      <path d="M21.8 27.2v3.6M26.2 27.2v3.6" stroke="#713f12" strokeWidth="0.4" opacity="0.6" />
+      {/* the round steel case and its white dial */}
+      <circle cx="24" cy="13.8" r="11.2" fill="#52525b" transform="translate(0 1)" />
+      <circle cx="24" cy="13.8" r="11.2" fill={`url(#${id}s)`} />
+      <path d="M16.03 7.11A10.4 10.4 0 0 1 21.84 3.63" fill="none" stroke="#fff" strokeWidth="0.9" strokeLinecap="round" opacity="0.8" />
+      <circle cx="24" cy="13.8" r="9.6" fill={`url(#${id}r)`} />
+      <circle cx="24" cy="13.8" r="9" fill={`url(#${id}d)`} />
+      {ticks.map((a, i) => (
+        <rect
+          key={a}
+          x={i % 2 ? 23.8 : 23.7}
+          y="5.3"
+          width={i % 2 ? 0.4 : 0.6}
+          height={i % 2 ? 1 : 1.7}
+          fill="#18181b"
+          transform={`rotate(${a} 24 13.8)`}
+        />
+      ))}
+      <path d="M29.9 15.72A6.2 6.2 0 0 1 28.38 18.18" fill="none" stroke="#dc2626" strokeWidth="1.1" />
+      <rect x="22" y="18.6" width="4" height="0.7" rx="0.35" fill="#71717a" opacity="0.6" />
+      {/* the red needle, a third of the way round */}
+      <path d="M24 6 24.6 13.8 24 16.4 23.4 13.8z" fill="#dc2626" transform="rotate(-45 24 13.8)" />
+      <circle cx="24" cy="13.8" r="1.4" fill="#27272a" />
+      <circle cx="23.6" cy="13.4" r="0.45" fill="#fff" opacity="0.5" />
+    </>
+  )
+}
+
 const ART: Record<PartType, (p: ArtProps) => ReactNode> = {
   battery: Battery,
   switch: Switch,
@@ -3973,6 +4746,17 @@ const ART: Record<PartType, (p: ArtProps) => ReactNode> = {
   hBridge: HBridge,
   multimeter: Multimeter,
   logicProbe: LogicProbe,
+  ecu: Ecu,
+  plc: Plc,
+  rtu: Rtu,
+  gsm: Gsm,
+  wifi: Wifi,
+  bluetooth: Bluetooth,
+  lora: Lora,
+  gps: Gps,
+  canBus: CanBus,
+  rs485: Rs485,
+  pressureSensor: PressureSensor,
 }
 
 /** A drawing of a part. `size` is the width and height in pixels. */

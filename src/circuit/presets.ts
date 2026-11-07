@@ -148,6 +148,36 @@ export type PresetId =
   | 'aiPartyLights'
   | 'aiPlantHelper'
   | 'aiRobotPet'
+  // cars: the engine computer (ECU) and the car's own networks
+  | 'ecuCooling'
+  | 'ecuHeadlights'
+  | 'ecuWipers'
+  | 'ecuParking'
+  | 'ecuCanDash'
+  | 'ecuAlarm'
+  | 'ecuTracker'
+  // factories: the PLC and the machines it runs
+  | 'plcConveyor'
+  | 'plcTank'
+  | 'plcAndon'
+  | 'plcSafety'
+  | 'plcModbus'
+  | 'plcHydraulic'
+  | 'plcBurner'
+  // oil and gas: the RTU at the well, far from any town
+  | 'rtuWellhead'
+  | 'rtuGasLeak'
+  | 'rtuPumpJack'
+  | 'rtuFlare'
+  | 'rtuTankFarm'
+  | 'rtuPipeline'
+  // connected: SMS, Wi-Fi, Bluetooth, LoRa and GPS
+  | 'smsFireAlarm'
+  | 'wifiWeather'
+  | 'btHeartBand'
+  | 'loraFarm'
+  | 'wifiDoorbell'
+  | 'gpsBike'
 
 /** Words some presets show on their screens, in the app's language. An empty string shows the screen's own sample. */
 export type PresetTexts = {
@@ -186,6 +216,11 @@ export type PresetTexts = {
   disco: string
   /** the baby monitor's screen */
   baby: string
+  /** the text messages: the car alarm's, the gas leak's, the flare's and the fire alarm's */
+  smsCar: string
+  smsGas: string
+  smsFlare: string
+  smsFire: string
 }
 
 type PresetPart = {
@@ -444,6 +479,58 @@ function sensorFor(board: string, type: BoardType, sensor: PartType, data?: Part
     ],
   }
 }
+
+/*
+ * Industry examples add two more pieces to the board layout:
+ *
+ *   message module (above the board)   resistor ─ transistor     load   battery
+ *   board ─────────────────────────────┘ (a pin switches a load too big for it, from its own battery)
+ */
+const DRIVER = { x: 330, y: -250 }
+
+/**
+ * A load too big for a board pin (a fan, a pump, a motor, a valve), switched by a
+ * transistor from its own battery. Its − joins `ground`, so the board and the
+ * battery share one ground.
+ */
+function driver(from: string, load: Piece, ground: string, volts = 4.5, ohms = 1000): Preset {
+  const k = load.key
+  return {
+    parts: [
+      { key: `${k}R`, type: 'resistor', ...DRIVER, data: { resistance: ohms } },
+      { key: `${k}Q`, type: 'transistor', x: DRIVER.x + 290, y: DRIVER.y },
+      { ...load, x: DRIVER.x + 540, y: DRIVER.y - 270, rotation: 90 },
+      { key: `${k}Bat`, type: 'battery', x: DRIVER.x + 780, y: DRIVER.y - 270, rotation: 270, data: { voltage: volts } },
+    ],
+    wires: [
+      [from, `${k}R:a`, 'blue'],
+      [`${k}R:b`, `${k}Q:B`, 'blue'],
+      [`${k}Bat:a`, `${k}:a`, 'red'],
+      [`${k}:b`, `${k}Q:C`, 'yellow'],
+      [`${k}Q:E`, `${k}Bat:b`, 'black'],
+      [`${k}Bat:b`, ground, 'black'],
+    ],
+  }
+}
+
+/** A module just above the board on its supply, its IN joined to `from` (a pin, a sensor or a button). */
+function above(board: BoardType, piece: Piece, from?: string, at: { x: number; y: number } = ABOVE_BOARD): Preset {
+  const supply = BOARDS[board].supply
+  return {
+    parts: [{ ...piece, ...at }],
+    wires: [
+      [`board:${supply}`, `${piece.key}:VCC`, 'red'],
+      [`${piece.key}:GND`, 'board:GND', 'black'],
+      ...(from ? [[from, `${piece.key}:IN`, 'blue'] satisfies PresetWire] : []),
+    ],
+  }
+}
+
+/** A board at (0, 0) running a program. */
+const boardAt = (type: BoardType, pins: Record<string, PinMode>): Preset => ({
+  parts: [{ key: 'board', type, x: 0, y: 0, data: program(type, pins) }],
+  wires: [],
+})
 
 const join = (...presets: Preset[]): Preset => ({
   parts: presets.flatMap((p) => p.parts),
@@ -2438,7 +2525,7 @@ const PRESETS: Record<PresetId, Preset> = {
     ]),
   ),
 
-  // ── talk to the AI board ──
+  // ── talk to the AI board ── (the industry examples follow them)
   // Each opens with a program already running, so something works before anyone asks;
   // then the child tells the board in their own words what to change.
 
@@ -2553,6 +2640,339 @@ const PRESETS: Record<PresetId, Preset> = {
       'sensor:GND',
     ),
   ),
+
+  // ── cars: the engine computer (ECU) ──
+
+  // the hotter the engine, the faster the radiator fan (PWM on OUT1); red warns above 30 °C
+  ecuCooling: join(
+    boardAt('ecu', { OUT1: 'follow', OUT5: 'invert', OUT6: 'follow' }),
+    sensorFor('board', 'ecu', 'tempSensor', { sense: 0.45 }),
+    driver('board:OUT1', { key: 'fan', type: 'fan' }, 'ok:b', 6, 4700),
+    outputs('board', [
+      { key: 'hot', pin: 'OUT6', type: 'led', color: 'red', ohms: 220, wire: 'white' },
+      { key: 'ok', pin: 'OUT5', type: 'led', color: 'green', ohms: 220, wire: 'green' },
+    ], 'sensor:GND'),
+  ),
+  // dusk: the headlights fade in and the blue light on the dashboard comes on
+  ecuHeadlights: join(
+    {
+      parts: [
+        { key: 'board', type: 'ecu', x: 0, y: 0, data: program('ecu', { OUT2: 'invert', OUT3: 'invert', OUT6: 'invert' }) },
+        { key: 'ldr', type: 'ldr', x: -330, y: -230, rotation: 90, data: { light: 0.15 } },
+        { key: 'div', type: 'resistor', x: -330, y: 30, rotation: 90, data: { resistance: 1000 } },
+      ],
+      wires: [
+        ['board:5V', 'ldr:a', 'red'],
+        ['ldr:b', 'board:AIN', 'yellow'],
+        ['ldr:b', 'div:a', 'yellow'],
+        ['div:b', 'board:GND', 'black'],
+      ],
+    },
+    outputs('board', [
+      { key: 'dash', pin: 'OUT6', type: 'led', color: 'blue', ohms: 100, wire: 'blue' },
+      { key: 'right', pin: 'OUT3', type: 'led', color: 'white', ohms: 100, wire: 'white' },
+      { key: 'left', pin: 'OUT2', type: 'led', color: 'white', ohms: 100, wire: 'white' },
+    ], 'div:b'),
+  ),
+  // rain on the glass starts the wiper (a servo); the harder it rains, the faster it sweeps
+  ecuWipers: join(
+    boardAt('ecu', { OUT1: 'alarm', OUT5: 'invert', OUT6: 'follow' }),
+    above('ecu', { key: 'wiper', type: 'servo' }),
+    { parts: [], wires: [['board:OUT1', 'wiper:OUT', 'blue']] },
+    sensorFor('board', 'ecu', 'rainSensor', { sense: 0.7 }),
+    outputs('board', [
+      { key: 'rain', pin: 'OUT6', type: 'led', color: 'blue', ohms: 220, wire: 'blue' },
+      { key: 'dry', pin: 'OUT5', type: 'led', color: 'green', ohms: 220, wire: 'green' },
+    ], 'sensor:GND'),
+  ),
+  // reversing: the closer the wall, the more bars light and the faster it beeps
+  ecuParking: join(
+    boardAt('ecu', { OUT1: 'follow', OUT5: 'invert', OUT6: 'alarm' }),
+    above('ecu', { key: 'gauge', type: 'barGraph' }, 'board:OUT1'),
+    sensorFor('board', 'ecu', 'ultrasonic', { sense: 0.35 }),
+    outputs('board', [
+      { key: 'beeper', pin: 'OUT6', type: 'buzzer', ohms: 100, wire: 'white' },
+      { key: 'clear', pin: 'OUT5', type: 'led', color: 'green', ohms: 220, wire: 'green' },
+    ], 'sensor:GND'),
+  ),
+  // the gas pedal is a knob: the ECU spins the engine and tells the dashboard over the CAN bus
+  ecuCanDash: join(
+    {
+      parts: [
+        { key: 'board', type: 'ecu', x: 0, y: 0, data: program('ecu', { OUT1: 'follow', OUT2: 'follow', OUT6: 'on' }) },
+        { key: 'pedal', type: 'potentiometer', ...SENSOR_SPOT, data: { level: 0.5, resistance: 10000 } },
+      ],
+      wires: [
+        ['board:5V', 'pedal:A', 'red'],
+        ['pedal:B', 'board:GND', 'black'],
+        ['pedal:W', 'board:AIN', 'yellow'],
+      ],
+    },
+    above('ecu', { key: 'can', type: 'canBus' }, 'board:OUT2'),
+    driver('board:OUT1', { key: 'engine', type: 'motor' }, 'ready:b', 3),
+    outputs('board', [{ key: 'ready', pin: 'OUT6', type: 'led', color: 'green', ohms: 220, wire: 'green' }], 'pedal:B'),
+  ),
+  // armed: the red light blinks. A knock on the glass: siren, hazard lights and a text to the owner
+  ecuAlarm: join(
+    boardAt('ecu', { OUT1: 'follow', OUT3: 'blink', OUT4: 'alarm', OUT5: 'alarm', OUT6: 'alarm' }),
+    above('ecu', { key: 'sms', type: 'gsm', data: (texts) => ({ text: texts.smsCar || undefined }) }, 'board:OUT1'),
+    sensorFor('board', 'ecu', 'knockSensor'),
+    outputs('board', [
+      { key: 'siren', pin: 'OUT6', type: 'buzzer', sound: 'yelp', ohms: 100, wire: 'white' },
+      { key: 'hazardL', pin: 'OUT5', type: 'led', color: 'orange', ohms: 220, wire: 'yellow' },
+      { key: 'hazardR', pin: 'OUT4', type: 'led', color: 'orange', ohms: 220, wire: 'yellow' },
+      { key: 'armed', pin: 'OUT3', type: 'led', color: 'red', ohms: 220, wire: 'blue' },
+    ], 'sensor:GND'),
+  ),
+  // the GPS finds the car; once it has a fix, its pulse blinks the green light and goes out by LoRa
+  ecuTracker: join(
+    {
+      parts: [
+        { key: 'board', type: 'ecu', x: 0, y: 0, data: program('ecu', { OUT2: 'follow', OUT5: 'on', OUT6: 'follow' }) },
+        { key: 'gps', type: 'gps', ...SENSOR_SPOT },
+      ],
+      wires: [
+        ['board:5V', 'gps:VCC', 'red'],
+        ['gps:GND', 'board:GND', 'black'],
+        ['gps:PPS', 'board:AIN', 'yellow'],
+      ],
+    },
+    above('ecu', { key: 'radio', type: 'lora' }, 'board:OUT2'),
+    outputs('board', [
+      { key: 'fix', pin: 'OUT6', type: 'led', color: 'green', ohms: 220, wire: 'green' },
+      { key: 'power', pin: 'OUT5', type: 'led', color: 'white', ohms: 100, wire: 'white' },
+    ], 'gps:GND'),
+  ),
+
+  // ── factories: the PLC ──
+
+  // the belt runs until a box reaches the sensor at its end; red says a box is waiting
+  plcConveyor: join(
+    boardAt('plc', { Q0: 'invert', Q3: 'follow', Q4: 'invert' }),
+    sensorFor('board', 'plc', 'irSensor'),
+    driver('board:Q0', { key: 'belt', type: 'motor' }, 'run:b', 3),
+    outputs('board', [
+      { key: 'run', pin: 'Q4', type: 'led', color: 'green', ohms: 220, wire: 'green' },
+      { key: 'box', pin: 'Q3', type: 'led', color: 'red', ohms: 220, wire: 'white' },
+    ], 'sensor:GND'),
+  ),
+  // the pump fills the tank until the water reaches the level sensor's top
+  plcTank: join(
+    boardAt('plc', { Q0: 'invert', Q3: 'invert', Q4: 'follow' }),
+    sensorFor('board', 'plc', 'waterSensor', { sense: 0.2 }),
+    driver('board:Q0', { key: 'pump', type: 'pump' }, 'full:b'),
+    outputs('board', [
+      { key: 'full', pin: 'Q4', type: 'led', color: 'blue', ohms: 100, wire: 'blue' },
+      { key: 'filling', pin: 'Q3', type: 'led', color: 'yellow', ohms: 220, wire: 'yellow' },
+    ], 'sensor:GND'),
+  ),
+  // a machine's three-step cycle on its stack light: run (green), change over (yellow), stop (red, with a beep)
+  plcAndon: join(
+    {
+      parts: [
+        { key: 'board', type: 'plc', x: 0, y: 0, data: program('plc', { Q0: 'step1', Q1: 'step3', Q2: 'step2', Q3: 'step1', Q4: 'step3' }) },
+        { key: 'tower', type: 'trafficLight', x: FIRST_COLUMN, y: 0 },
+      ],
+      wires: [
+        ['board:Q1', 'tower:R', 'white'],
+        ['board:Q2', 'tower:Y', 'yellow'],
+        ['board:Q3', 'tower:G', 'green'],
+        ['tower:GND', 'board:GND', 'black'],
+      ],
+    },
+    driver('board:Q0', { key: 'machine', type: 'motor' }, 'board:GND', 3),
+    outputs('board', [{ key: 'horn', pin: 'Q4', type: 'buzzer', ohms: 100, wire: 'blue' }]),
+  ),
+  // the guard door's switch: shut, the machine may run; open it and the machine stops at once
+  plcSafety: join(
+    {
+      parts: [
+        { key: 'board', type: 'plc', x: 0, y: 0, data: program('plc', { Q0: 'follow', Q3: 'follow', Q4: 'invert' }) },
+        { key: 'door', type: 'slideSwitch', x: -330, y: -230, rotation: 90, data: { closed: true } },
+        { key: 'pull', type: 'resistor', x: -330, y: 30, rotation: 90, data: { resistance: 1000 } },
+      ],
+      wires: [
+        ['board:5V', 'door:COM', 'red'],
+        ['door:B', 'board:AI0', 'yellow'],
+        ['door:B', 'pull:a', 'yellow'],
+        ['pull:b', 'board:GND', 'black'],
+      ],
+    },
+    driver('board:Q0', { key: 'press', type: 'motor' }, 'safe:b', 3),
+    outputs('board', [
+      { key: 'open', pin: 'Q4', type: 'led', color: 'red', ohms: 220, wire: 'white' },
+      { key: 'safe', pin: 'Q3', type: 'led', color: 'green', ohms: 220, wire: 'green' },
+    ], 'pull:b'),
+  ),
+  // the furnace's temperature goes to the control room over RS-485; above 30 °C the fan and the horn start
+  plcModbus: join(
+    boardAt('plc', { AQ0: 'follow', Q0: 'follow', Q3: 'invert', Q4: 'alarm' }),
+    above('plc', { key: 'bus', type: 'rs485' }, 'board:AQ0'),
+    sensorFor('board', 'plc', 'tempSensor', { sense: 0.4 }),
+    driver('board:Q0', { key: 'fan', type: 'fan' }, 'ok:b'),
+    outputs('board', [
+      { key: 'horn', pin: 'Q4', type: 'buzzer', ohms: 100, wire: 'white' },
+      { key: 'ok', pin: 'Q3', type: 'led', color: 'green', ohms: 220, wire: 'green' },
+    ], 'sensor:GND'),
+  ),
+  // a hydraulic press's power pack: the pump builds up the pressure, and the plant watches it over Wi-Fi
+  plcHydraulic: join(
+    boardAt('plc', { AQ0: 'follow', Q0: 'invert', Q3: 'invert', Q4: 'follow' }),
+    above('plc', { key: 'wifi', type: 'wifi' }, 'board:AQ0'),
+    sensorFor('board', 'plc', 'pressureSensor', { sense: 0.3 }),
+    driver('board:Q0', { key: 'pump', type: 'pump' }, 'ready:b'),
+    outputs('board', [
+      { key: 'ready', pin: 'Q4', type: 'led', color: 'green', ohms: 220, wire: 'green' },
+      { key: 'building', pin: 'Q3', type: 'led', color: 'yellow', ohms: 220, wire: 'yellow' },
+    ], 'sensor:GND'),
+  ),
+  // the gas valve stays open only while the sensor sees the flame; if it goes out, the valve shuts and the horn sounds
+  plcBurner: join(
+    boardAt('plc', { Q0: 'follow', Q3: 'follow', Q4: 'invert' }),
+    sensorFor('board', 'plc', 'flameSensor', { sense: 0.8 }),
+    driver('board:Q0', { key: 'valve', type: 'solenoid' }, 'lit:b'),
+    outputs('board', [
+      { key: 'horn', pin: 'Q4', type: 'buzzer', ohms: 100, wire: 'white' },
+      { key: 'lit', pin: 'Q3', type: 'led', color: 'orange', ohms: 220, wire: 'yellow' },
+    ], 'sensor:GND'),
+  ),
+
+  // ── oil and gas: the RTU at the well ──
+
+  // the wellhead's pressure goes to the control room by LoRa; too high, and the beacon and the horn go off
+  rtuWellhead: join(
+    boardAt('rtu', { AO1: 'follow', DO2: 'invert', DO3: 'alarm', DO4: 'alarm' }),
+    above('rtu', { key: 'radio', type: 'lora' }, 'board:AO1'),
+    sensorFor('board', 'rtu', 'pressureSensor', { sense: 0.35 }),
+    outputs('board', [
+      { key: 'horn', pin: 'DO4', type: 'buzzer', sound: 'wail', ohms: 100, wire: 'white' },
+      { key: 'beacon', pin: 'DO3', type: 'led', color: 'red', ohms: 220, wire: 'white' },
+      { key: 'normal', pin: 'DO2', type: 'led', color: 'green', ohms: 220, wire: 'green' },
+    ], 'sensor:GND'),
+  ),
+  // poisonous gas at the well: the beacon flashes, the horn wails and the supervisor gets a text
+  rtuGasLeak: join(
+    boardAt('rtu', { DO1: 'follow', DO2: 'invert', DO3: 'alarm', DO4: 'alarm' }),
+    above('rtu', { key: 'sms', type: 'gsm', data: (texts) => ({ text: texts.smsGas || undefined }) }, 'board:DO1'),
+    sensorFor('board', 'rtu', 'gasSensor', { sense: 0.1 }),
+    outputs('board', [
+      { key: 'horn', pin: 'DO4', type: 'buzzer', sound: 'wail', ohms: 100, wire: 'white' },
+      { key: 'beacon', pin: 'DO3', type: 'led', color: 'red', ohms: 220, wire: 'white' },
+      { key: 'safe', pin: 'DO2', type: 'led', color: 'green', ohms: 220, wire: 'green' },
+    ], 'sensor:GND'),
+  ),
+  // the pump jack lifts oil into the tank and stops when the tank is full; the bars show the level
+  rtuPumpJack: join(
+    boardAt('rtu', { AO1: 'follow', DO1: 'invert', DO3: 'invert', DO4: 'follow' }),
+    above('rtu', { key: 'level', type: 'barGraph' }, 'board:AO1'),
+    sensorFor('board', 'rtu', 'waterSensor', { sense: 0.3 }),
+    driver('board:DO1', { key: 'jack', type: 'motor' }, 'pumping:b', 3),
+    outputs('board', [
+      { key: 'full', pin: 'DO4', type: 'led', color: 'red', ohms: 220, wire: 'white' },
+      { key: 'pumping', pin: 'DO3', type: 'led', color: 'green', ohms: 220, wire: 'green' },
+    ], 'sensor:GND'),
+  ),
+  // the flare must never go out: if the sensor loses the flame, the horn sounds and a text goes out
+  rtuFlare: join(
+    boardAt('rtu', { DO1: 'invert', DO3: 'follow', DO4: 'invert' }),
+    above('rtu', { key: 'sms', type: 'gsm', data: (texts) => ({ text: texts.smsFlare || undefined }) }, 'board:DO1'),
+    sensorFor('board', 'rtu', 'flameSensor', { sense: 0.8 }),
+    outputs('board', [
+      { key: 'horn', pin: 'DO4', type: 'buzzer', ohms: 100, wire: 'white' },
+      { key: 'lit', pin: 'DO3', type: 'led', color: 'orange', ohms: 220, wire: 'yellow' },
+    ], 'sensor:GND'),
+  ),
+  // a storage tank's level, on its bar gauge and in the cloud over Wi-Fi; red when it is nearly full
+  rtuTankFarm: join(
+    boardAt('rtu', { AO1: 'follow', AO2: 'follow', DO3: 'invert', DO4: 'follow' }),
+    above('rtu', { key: 'wifi', type: 'wifi' }, 'board:AO1'),
+    above('rtu', { key: 'gauge', type: 'barGraph' }, 'board:AO2', DRIVER),
+    sensorFor('board', 'rtu', 'waterSensor', { sense: 0.4 }),
+    outputs('board', [
+      { key: 'high', pin: 'DO4', type: 'led', color: 'red', ohms: 220, wire: 'white' },
+      { key: 'ok', pin: 'DO3', type: 'led', color: 'green', ohms: 220, wire: 'green' },
+    ], 'sensor:GND'),
+  ),
+  // the booster pump keeps the pipeline's pressure up; the pressure goes to the control room over Modbus
+  rtuPipeline: join(
+    boardAt('rtu', { AO1: 'follow', DO1: 'invert', DO3: 'invert', DO4: 'follow' }),
+    above('rtu', { key: 'bus', type: 'rs485' }, 'board:AO1'),
+    sensorFor('board', 'rtu', 'pressureSensor', { sense: 0.25 }),
+    driver('board:DO1', { key: 'pump', type: 'pump' }, 'ok:b'),
+    outputs('board', [
+      { key: 'ok', pin: 'DO4', type: 'led', color: 'green', ohms: 220, wire: 'green' },
+      { key: 'boosting', pin: 'DO3', type: 'led', color: 'yellow', ohms: 220, wire: 'yellow' },
+    ], 'sensor:GND'),
+  ),
+
+  // ── connected: SMS, Wi-Fi, Bluetooth, LoRa and GPS ──
+
+  // a flame: the buzzer beeps and a text message goes to your phone
+  smsFireAlarm: join(
+    boardAt('arduino', { D8: 'invert', D12: 'follow', D13: 'alarm' }),
+    above('arduino', { key: 'sms', type: 'gsm', data: (texts) => ({ text: texts.smsFire || undefined }) }, 'board:D12'),
+    sensorFor('board', 'arduino', 'flameSensor'),
+    outputs('board', [
+      { key: 'safe', pin: 'D8', type: 'led', color: 'green', ohms: 220, wire: 'green' },
+      { key: 'siren', pin: 'D13', type: 'buzzer', ohms: 100, wire: 'white' },
+    ], 'sensor:GND'),
+  ),
+  // the temperature goes to the cloud every second; blue when it is cold, red when it is hot
+  wifiWeather: join(
+    boardAt('arduino', { D8: 'follow', D9: 'follow', D12: 'invert' }),
+    above('arduino', { key: 'wifi', type: 'wifi' }, 'board:D9'),
+    sensorFor('board', 'arduino', 'tempSensor', { sense: 0.45 }),
+    outputs('board', [
+      { key: 'hot', pin: 'D8', type: 'led', color: 'red', ohms: 220, wire: 'white' },
+      { key: 'cold', pin: 'D12', type: 'led', color: 'blue', ohms: 100, wire: 'blue' },
+    ], 'sensor:GND'),
+  ),
+  // a fitness band: the red light beats with your heart, and the phone gets every beat over Bluetooth
+  btHeartBand: join(
+    boardAt('nano', { D9: 'follow', D13: 'follow' }),
+    above('nano', { key: 'bt', type: 'bluetooth' }, 'board:D9'),
+    sensorFor('board', 'nano', 'pulseSensor', { sense: 0.25 }),
+    outputs('board', [{ key: 'beat', pin: 'D13', type: 'led', color: 'red', ohms: 220, wire: 'white' }], 'sensor:GND'),
+  ),
+  // a field far from any Wi-Fi: the soil's wetness goes kilometres by LoRa; red glows when the plants are thirsty
+  loraFarm: join(
+    boardAt('pico', { GP10: 'invert', GP11: 'follow', GP15: 'follow' }),
+    above('pico', { key: 'radio', type: 'lora' }, 'board:GP15'),
+    sensorFor('board', 'pico', 'soilSensor', { sense: 0.25 }),
+    outputs('board', [
+      { key: 'thirsty', pin: 'GP10', type: 'led', color: 'red', ohms: 47, wire: 'white' },
+      { key: 'wet', pin: 'GP11', type: 'led', color: 'green', ohms: 47, wire: 'green' },
+    ], 'sensor:GND'),
+  ),
+  // touch the bell: it rings inside, and the Wi-Fi tells your phone someone is at the door
+  wifiDoorbell: join(
+    boardAt('nano', { D8: 'on', D12: 'follow', D13: 'follow' }),
+    above('nano', { key: 'wifi', type: 'wifi' }, 'board:D12'),
+    sensorFor('board', 'nano', 'touchSensor'),
+    outputs('board', [
+      { key: 'porch', pin: 'D8', type: 'led', color: 'white', ohms: 100, wire: 'white' },
+      { key: 'chime', pin: 'D13', type: 'buzzer', ohms: 100, wire: 'yellow' },
+    ], 'sensor:GND'),
+  ),
+  // a bike computer: the GPS finds the bike, and every pulse goes to the phone on the handlebars
+  gpsBike: join(
+    {
+      parts: [
+        { key: 'board', type: 'nano', x: 0, y: 0, data: program('nano', { D8: 'on', D9: 'follow', D13: 'follow' }) },
+        { key: 'gps', type: 'gps', ...SENSOR_SPOT },
+      ],
+      wires: [
+        ['board:5V', 'gps:VCC', 'red'],
+        ['gps:GND', 'board:GND', 'black'],
+        ['gps:PPS', 'board:A0', 'yellow'],
+      ],
+    },
+    above('nano', { key: 'bt', type: 'bluetooth' }, 'board:D9'),
+    outputs('board', [
+      { key: 'power', pin: 'D8', type: 'led', color: 'green', ohms: 220, wire: 'green' },
+      { key: 'fix', pin: 'D13', type: 'led', color: 'blue', ohms: 100, wire: 'blue' },
+    ], 'gps:GND'),
+  ),
 }
 
 /** How hard an example is to understand: 1 easy, 2 medium, 3 hard. */
@@ -2572,6 +2992,10 @@ export type PresetCategory =
   | 'games'
   | 'screens'
   | 'ai'
+  | 'iot'
+  | 'car'
+  | 'factory'
+  | 'oil'
 
 export const PRESET_CATEGORIES: readonly PresetCategory[] = [
   'first',
@@ -2580,6 +3004,10 @@ export const PRESET_CATEGORIES: readonly PresetCategory[] = [
   'logic',
   'boards',
   'smart',
+  'iot',
+  'car',
+  'factory',
+  'oil',
   'ai',
   'sound',
   'motion',
@@ -2734,6 +3162,36 @@ export const PRESET_INFO: Record<PresetId, PresetInfo> = {
   aiRobotPet: { category: 'ai', level: 2, art: ['touchSensor', 'aiBoard', 'servo', 'led:blue'] },
   aiSmartHome: { category: 'ai', level: 2, art: ['ldr', 'aiBoard', 'motor', 'buzzer'] },
   aiPlantHelper: { category: 'ai', level: 3, art: ['soilSensor', 'aiBoard', 'transistor', 'motor'] },
+
+  ecuHeadlights: { category: 'car', level: 1, art: ['ldr', 'ecu', 'led:white'] },
+  ecuCooling: { category: 'car', level: 2, art: ['tempSensor', 'ecu', 'transistor', 'fan'] },
+  ecuWipers: { category: 'car', level: 2, art: ['rainSensor', 'ecu', 'servo'] },
+  ecuParking: { category: 'car', level: 2, art: ['ultrasonic', 'ecu', 'barGraph', 'buzzer'] },
+  ecuAlarm: { category: 'car', level: 2, art: ['knockSensor', 'ecu', 'gsm', 'buzzer'] },
+  ecuCanDash: { category: 'car', level: 3, art: ['potentiometer', 'ecu', 'canBus', 'motor'] },
+  ecuTracker: { category: 'car', level: 3, art: ['gps', 'ecu', 'lora', 'led:green'] },
+
+  plcAndon: { category: 'factory', level: 1, art: ['plc', 'trafficLight', 'buzzer'] },
+  plcConveyor: { category: 'factory', level: 2, art: ['irSensor', 'plc', 'transistor', 'motor'] },
+  plcTank: { category: 'factory', level: 2, art: ['waterSensor', 'plc', 'pump'] },
+  plcSafety: { category: 'factory', level: 2, art: ['slideSwitch', 'plc', 'motor', 'led:red'] },
+  plcBurner: { category: 'factory', level: 2, art: ['flameSensor', 'plc', 'solenoid'] },
+  plcModbus: { category: 'factory', level: 3, art: ['tempSensor', 'plc', 'rs485', 'fan'] },
+  plcHydraulic: { category: 'factory', level: 3, art: ['pressureSensor', 'plc', 'pump', 'wifi'] },
+
+  rtuWellhead: { category: 'oil', level: 2, art: ['pressureSensor', 'rtu', 'lora', 'buzzer'] },
+  rtuGasLeak: { category: 'oil', level: 2, art: ['gasSensor', 'rtu', 'gsm', 'buzzer'] },
+  rtuFlare: { category: 'oil', level: 2, art: ['flameSensor', 'rtu', 'gsm'] },
+  rtuPumpJack: { category: 'oil', level: 2, art: ['waterSensor', 'rtu', 'motor', 'barGraph'] },
+  rtuTankFarm: { category: 'oil', level: 2, art: ['waterSensor', 'rtu', 'wifi', 'barGraph'] },
+  rtuPipeline: { category: 'oil', level: 3, art: ['pressureSensor', 'rtu', 'pump', 'rs485'] },
+
+  wifiWeather: { category: 'iot', level: 1, art: ['tempSensor', 'arduino', 'wifi'] },
+  wifiDoorbell: { category: 'iot', level: 1, art: ['touchSensor', 'nano', 'wifi', 'buzzer'] },
+  smsFireAlarm: { category: 'iot', level: 2, art: ['flameSensor', 'arduino', 'gsm', 'buzzer'] },
+  btHeartBand: { category: 'iot', level: 2, art: ['pulseSensor', 'nano', 'bluetooth', 'led:red'] },
+  loraFarm: { category: 'iot', level: 2, art: ['soilSensor', 'pico', 'lora'] },
+  gpsBike: { category: 'iot', level: 3, art: ['gps', 'nano', 'bluetooth', 'led:blue'] },
 }
 
 /** Every example, shelf by shelf, easiest first. */

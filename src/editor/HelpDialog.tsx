@@ -13,6 +13,32 @@ import { Kbd } from '@/components/ui/kbd'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { useI18n } from '@/i18n'
 
+const MAKER = 'SBC'
+
+/** The maker's line ("A product of SBC") with the maker's name linked to its website. */
+function MadeBy({ line }: { line: string }) {
+  const at = line.indexOf(MAKER)
+  const link = (
+    <a
+      href="https://sbc.om"
+      target="_blank"
+      rel="noopener noreferrer"
+      dir="ltr"
+      className="font-semibold text-foreground/80 underline-offset-2 hover:text-foreground hover:underline"
+    >
+      {MAKER}
+    </a>
+  )
+  if (at < 0) return <>{line} {link}</>
+  return (
+    <>
+      {line.slice(0, at)}
+      {link}
+      {line.slice(at + MAKER.length)}
+    </>
+  )
+}
+
 /**
  * "How to play". It brings its own button in the top bar; on phones the
  * "More" menu opens it instead through `open` / `onOpenChange`.
@@ -71,20 +97,24 @@ export function HelpDialog({
         </div>
         <footer className="flex items-center gap-3 border-t pt-4">
           <BrandLogo className="size-10" />
-          <div className="min-w-0 leading-tight">
-            <p className="text-sm font-semibold">
-              {t.app.title}
-              <span dir="ltr" className="ms-1.5 text-xs font-normal text-muted-foreground tabular-nums">
+          <div className="min-w-0 flex-1 leading-tight">
+            <p className="text-sm font-semibold">{t.app.title}</p>
+            {/* the maker on one side, the version on the other */}
+            <div className="mt-0.5 flex items-center justify-between gap-3 text-xs text-muted-foreground">
+              <p className="min-w-0">
+                <MadeBy line={t.app.madeBy} />
+                <span aria-hidden className="mx-1.5">·</span>
+                <a href="https://circuitlab.app" dir="ltr" className="underline-offset-2 hover:text-foreground hover:underline">
+                  circuitlab.app
+                </a>
+              </p>
+              <span
+                dir="ltr"
+                className="shrink-0 rounded-full border bg-muted/60 px-2 py-0.5 text-[11px] font-medium tabular-nums"
+              >
                 v{__APP_VERSION__}
               </span>
-            </p>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              {t.app.madeBy}
-              <span aria-hidden className="mx-1.5">·</span>
-              <a href="https://circuitlab.app" dir="ltr" className="underline-offset-2 hover:text-foreground hover:underline">
-                circuitlab.app
-              </a>
-            </p>
+            </div>
           </div>
         </footer>
       </DialogContent>

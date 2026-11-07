@@ -211,14 +211,8 @@ html[lang='ar'] {
   --xy-minimap-background-color: var(--card);
   --xy-minimap-mask-background-color: color-mix(in oklch, var(--background) 65%, transparent);
   --xy-controls-button-background-color: var(--card);
-  --xy-attribution-background-color: transparent;
   --xy-selection-background-color: color-mix(in oklch, var(--primary) 10%, transparent);
   --xy-selection-border: 1px dashed var(--primary);
-}
-
-.board .react-flow__attribution {
-  opacity: 0.5;
-  font-size: 9px;
 }
 
 .board .react-flow__node-part {

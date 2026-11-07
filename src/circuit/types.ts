@@ -97,6 +97,20 @@ export type PartType =
   | 'hBridge'
   | 'multimeter'
   | 'logicProbe'
+  // boards from the real world: a car's engine computer, a factory PLC and an oil well's remote unit
+  | 'ecu'
+  | 'plc'
+  | 'rtu'
+  // modules that send messages: by SMS, Wi-Fi, Bluetooth and LoRa, a GPS, and the wired CAN and RS-485 buses
+  | 'gsm'
+  | 'wifi'
+  | 'bluetooth'
+  | 'lora'
+  | 'gps'
+  | 'canBus'
+  | 'rs485'
+  // an industrial pressure sensor with its own dial, as on an oil well or an air line
+  | 'pressureSensor'
 
 /** What a screen shows. Each kind of screen offers some of these (see `DISPLAY_MODES`). */
 export type DisplayMode =
@@ -240,6 +254,8 @@ export type PartData = {
   dial?: MeterDial
   /** IR LED: seen through a phone camera (true) or with your own eyes */
   camera?: boolean
+  /** SMS module: the number it texts (its message is in `text`) */
+  phone?: string
 }
 
 /** The multimeter's dial: volts, amps, ohms, or ohms with a beep for a joined path. */

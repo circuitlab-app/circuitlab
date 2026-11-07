@@ -120,6 +120,7 @@ const SENSE_WORDS: Partial<Record<PartType, [high: string, low: string]>> = {
   forceSensor: ['someone presses it hard', 'nobody presses it'],
   pulseSensor: ['the heart beats', 'it is between two beats'],
   knockSensor: ['someone knocks', 'nobody knocks'],
+  pressureSensor: ['the pressure is high', 'the pressure is low'],
   switch: ['the switch is on', 'the switch is off'],
   button: ['the button is pressed', 'the button is not pressed'],
   tilt: ['it is tilted', 'it stands straight'],

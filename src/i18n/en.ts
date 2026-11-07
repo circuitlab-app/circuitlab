@@ -1,4 +1,4 @@
-import type { GateType, PartCategory, SensedPart } from '@/circuit/catalog'
+import type { GateType, PartCategory, RadioType, SensedPart } from '@/circuit/catalog'
 import type { MissionId } from '@/circuit/missions'
 import type { PresetCategory, PresetId, PresetLevel, PresetTexts } from '@/circuit/presets'
 import type { PartStatus } from '@/circuit/solver'
@@ -367,6 +367,43 @@ export type Dictionary = {
     pulse: string
     latchTable: { title: string; hint: string; keeps: string }
     bridgeTable: { title: string; hint: string; motor: string }
+  }
+  /** the message modules: SMS, Wi-Fi, Bluetooth, LoRa, GPS, CAN bus and RS-485 */
+  radio: {
+    tips: {
+      power: string
+      /** while it joins its network (the GPS: while it looks for satellites) */
+      joining: Record<RadioType, string>
+      /** once it has joined: what it does now */
+      ready: Record<RadioType, string>
+      /** the SMS module, while a text is going out */
+      sending: string
+      /** the SMS module, after it sent one */
+      sent: string
+    }
+    /** one word on the card while it joins: "Searching", "Pairing" … */
+    joining: Record<RadioType, string>
+    /** who gets what it sends: a phone, the cloud, the control room … */
+    receivers: Record<RadioType, string>
+    sending: string
+    ready: string
+    sent: (n: number) => string
+    sats: (n: number) => string
+    /** the SMS module's settings */
+    message: string
+    phone: string
+    messageHint: string
+    defaultMessage: string
+    noMessages: string
+    delivered: string
+    /** the value it is sending right now */
+    now: string
+    /** how many messages it has sent */
+    messages: string
+    distance: string
+    signal: string
+    position: string
+    waiting: string
   }
   units: { volt: string; amp: string; milliamp: string; watt: string; ohm: string }
 }
@@ -848,6 +885,61 @@ export const en: Dictionary = {
       description: 'Touch its tip to a wire to see if it is HIGH, LOW or pulsing. It takes power from your circuit.',
       working: 'Testing',
     },
+    ecu: {
+      name: 'Car ECU',
+      description: 'The engine computer of a car. It reads a sensor on AIN and runs fans, lights and pumps from OUT1 to OUT6.',
+      working: 'Running',
+    },
+    plc: {
+      name: 'Factory PLC',
+      description: 'The controller that runs the machines in a factory. It reads AI0, clicks relays Q0 to Q4, and sets AQ0 anywhere between off and on.',
+      working: 'Running',
+    },
+    rtu: {
+      name: 'Oil-well RTU',
+      description: 'The remote unit at an oil well, far from any town. It watches its sensor on AI1 and runs pumps and alarms on its own.',
+      working: 'Running',
+    },
+    gsm: {
+      name: 'SMS module',
+      description: 'A mobile phone on a chip, with its own SIM card. When IN goes HIGH, it sends a text message.',
+      working: 'On network',
+    },
+    wifi: {
+      name: 'Wi-Fi module',
+      description: 'Joins the Wi-Fi and sends the volts on IN to the cloud every second, so you can see them on a phone anywhere.',
+      working: 'Online',
+    },
+    bluetooth: {
+      name: 'Bluetooth module',
+      description: 'Talks to a phone close by, without wires. It sends what it reads on IN to the phone.',
+      working: 'Paired',
+    },
+    lora: {
+      name: 'LoRa radio',
+      description: 'Sends small messages many kilometres away on very little power. Farms and oil fields use it.',
+      working: 'Joined',
+    },
+    gps: {
+      name: 'GPS module',
+      description: 'Listens to satellites to find where it is on Earth. Once it knows, PPS gives a pulse every second.',
+      working: 'Fix',
+    },
+    canBus: {
+      name: 'CAN bus module',
+      description: 'Puts the volts on IN onto the CAN bus: the network that joins all the computers in a car.',
+      working: 'On the bus',
+    },
+    rs485: {
+      name: 'RS-485 module',
+      description: 'Sends IN down a long cable to the control room, in Modbus: the language of factory machines.',
+      working: 'On the line',
+    },
+    pressureSensor: {
+      name: 'Pressure sensor',
+      description: 'Measures the pressure in a pipe or a well, from 0 to 200 bar. S rises with the pressure.',
+      working: 'Measuring',
+    },
   },
   sense: {
     thermistor: 'Heat',
@@ -870,6 +962,7 @@ export const en: Dictionary = {
     forceSensor: 'Press',
     pulseSensor: 'Heart rate',
     knockSensor: 'Knock',
+    pressureSensor: 'Pressure',
   },
   categories: {
     power: 'Power',
@@ -881,6 +974,7 @@ export const en: Dictionary = {
     sensor: 'Sensors',
     meter: 'Meters',
     display: 'Displays',
+    comms: 'Messages and networks',
   },
   colors: {
     warm: 'Warm',
@@ -1082,6 +1176,32 @@ export const en: Dictionary = {
     aiPartyLights: { name: 'AI party lights', description: 'Ask for a new light dance and watch it start' },
     aiPlantHelper: { name: 'AI plant helper', description: 'The pump waters dry soil. Ask it to change the rules' },
     aiRobotPet: { name: 'AI robot pet', description: 'A wagging tail and blue eyes. Teach it to beep when touched' },
+    ecuCooling: { name: 'Engine cooling fan', description: 'The hotter the engine, the faster the ECU spins the radiator fan' },
+    ecuHeadlights: { name: 'Automatic headlights', description: 'The ECU turns the headlights on at dusk' },
+    ecuWipers: { name: 'Rain-sensing wipers', description: 'Rain on the glass starts the wiper; heavy rain sweeps faster' },
+    ecuParking: { name: 'Parking radar', description: 'Reversing: the closer the wall, the more bars and the faster the beeps' },
+    ecuCanDash: { name: 'CAN bus dashboard', description: 'The gas pedal sets the engine, and the CAN bus tells the dashboard' },
+    ecuAlarm: { name: 'Car alarm with SMS', description: 'A knock on the glass: siren, hazard lights and a text to the owner' },
+    ecuTracker: { name: 'GPS car tracker', description: 'The GPS finds the car and LoRa reports where it is' },
+    plcConveyor: { name: 'Conveyor belt', description: 'The belt runs until a box reaches the sensor at its end' },
+    plcTank: { name: 'Tank filling', description: 'The PLC runs the pump until the tank is full' },
+    plcAndon: { name: 'Machine stack light', description: 'Green runs, yellow changes over, red stops with a horn' },
+    plcSafety: { name: 'Guard door interlock', description: 'Open the guard door and the press stops at once' },
+    plcModbus: { name: 'Furnace over Modbus', description: 'The furnace’s temperature goes to the control room on RS-485' },
+    plcHydraulic: { name: 'Hydraulic power pack', description: 'The pump builds the pressure, and Wi-Fi sends it to the plant' },
+    plcBurner: { name: 'Burner flame safety', description: 'The gas valve stays open only while the flame is seen' },
+    rtuWellhead: { name: 'Wellhead pressure', description: 'The well’s pressure goes out by LoRa; too high sets off the alarm' },
+    rtuGasLeak: { name: 'Gas leak alarm', description: 'Poisonous gas at the well: beacon, horn and a text to the supervisor' },
+    rtuPumpJack: { name: 'Pump jack', description: 'Lifts oil into the tank and stops when the tank is full' },
+    rtuFlare: { name: 'Flare watchdog', description: 'If the flare goes out, the horn sounds and a text goes out' },
+    rtuTankFarm: { name: 'Oil tank level', description: 'The tank’s level on a bar gauge and in the cloud' },
+    rtuPipeline: { name: 'Pipeline booster pump', description: 'Keeps the pipeline’s pressure up and reports it over Modbus' },
+    smsFireAlarm: { name: 'SMS fire alarm', description: 'A flame makes it beep and send a text to your phone' },
+    wifiWeather: { name: 'Wi-Fi weather station', description: 'Sends the temperature to the cloud every second' },
+    btHeartBand: { name: 'Bluetooth heart band', description: 'Beats with your heart and sends each beat to the phone' },
+    loraFarm: { name: 'LoRa farm sensor', description: 'Sends the soil’s wetness kilometres away, far from any Wi-Fi' },
+    wifiDoorbell: { name: 'Wi-Fi doorbell', description: 'Rings inside and tells your phone someone is at the door' },
+    gpsBike: { name: 'GPS bike computer', description: 'Finds the bike with GPS and sends it to the phone by Bluetooth' },
   },
   gallery: {
     title: 'Examples',
@@ -1101,6 +1221,10 @@ export const en: Dictionary = {
       home: { name: 'Home and city', short: 'Home', blurb: 'Gadgets for your house and your street.' },
       games: { name: 'Games and fun', short: 'Games', blurb: 'Play with friends and test your skills.' },
       ai: { name: 'Talk to AI', short: 'AI', blurb: 'Tell the AI board what to do, and it sets its own pins.' },
+      iot: { name: 'Connected', short: 'Online', blurb: 'SMS, Wi-Fi, Bluetooth, LoRa and GPS: projects that send messages.' },
+      car: { name: 'Cars', short: 'Cars', blurb: 'The engine computer (ECU) and the networks inside a car.' },
+      factory: { name: 'Factories', short: 'Factory', blurb: 'The PLC runs belts, pumps, presses and burners.' },
+      oil: { name: 'Oil and gas', short: 'Oil', blurb: 'The RTU watches a far-away well and reports to the control room.' },
     },
     levels: { 1: 'Easy', 2: 'Medium', 3: 'Hard' },
     search: 'Find an example',
@@ -1133,6 +1257,10 @@ export const en: Dictionary = {
       news: 'Kite show in the park on Friday • The new library opens today • Sunny all week',
       disco: 'Dance!',
       baby: 'Baby room\nListening...',
+      smsCar: 'Car alarm! Someone is at your car.',
+      smsGas: 'GAS ALARM at Well 7! Leave the area.',
+      smsFlare: 'Well 7: the flare is out! Please check.',
+      smsFire: 'Fire at home! Please call for help.',
     },
   },
   inspector: {
@@ -1491,6 +1619,65 @@ export const en: Dictionary = {
       hint: 'IN1 sets M1 and IN2 sets M2. The motor only turns when the two are different.',
       motor: 'Motor',
     },
+  },
+  radio: {
+    tips: {
+      power: 'This module needs power: join + to + and − to −, with 3 V or more. A board’s 5V pin is just right.',
+      joining: {
+        gsm: 'Looking for the mobile network. Like a phone you just turned on, it takes a couple of seconds.',
+        wifi: 'Joining the Wi-Fi network…',
+        bluetooth: 'Pairing with the phone…',
+        lora: 'Joining the LoRa network…',
+        gps: 'Listening for satellites. It must hear four of them to know where it is. Out in the open it hears more.',
+        canBus: 'Joining the bus…',
+        rs485: 'Joining the line…',
+      },
+      ready: {
+        gsm: 'Ready! Make IN go HIGH (with a board pin or a sensor) and it sends the message to the phone.',
+        wifi: 'Online: every second it sends the volts on IN to the cloud, so you can watch them on a phone anywhere.',
+        bluetooth: 'Paired: twice a second it sends the volts on IN to the phone next to it.',
+        lora: 'Every 2 seconds it sends the volts on IN, as far as 10 km, using less power than a small LED.',
+        gps: 'Fix! It knows where it is. PPS gives a pulse at the start of every second, right to a millionth of a second.',
+        canBus: 'Ten times a second it puts the volts on IN onto the car’s bus, as one byte in a CAN message.',
+        rs485: 'Four times a second it writes the volts on IN into Modbus register 40001, for the control room.',
+      },
+      sending: 'Sending the text… A real SMS module takes a few seconds, and needs short bursts of up to 2 A.',
+      sent: 'Sent! IN must go LOW and then HIGH again before it sends another one.',
+    },
+    joining: {
+      gsm: 'Searching',
+      wifi: 'Joining',
+      bluetooth: 'Pairing',
+      lora: 'Joining',
+      gps: 'Searching',
+      canBus: 'Starting',
+      rs485: 'Starting',
+    },
+    receivers: {
+      gsm: 'Phone',
+      wifi: 'Cloud dashboard',
+      bluetooth: 'Phone app',
+      lora: 'LoRa gateway',
+      gps: 'Where it is',
+      canBus: 'Car dashboard',
+      rs485: 'Control room',
+    },
+    sending: 'Sending',
+    ready: 'Ready',
+    sent: (n) => `${n} sent`,
+    sats: (n) => `${n} satellites`,
+    message: 'Message',
+    phone: 'Phone number',
+    messageHint: 'It sends this text each time IN goes HIGH.',
+    defaultMessage: 'Alarm! Please check the sensor.',
+    noMessages: 'No messages yet',
+    delivered: 'Delivered',
+    now: 'Sending now',
+    messages: 'Messages sent',
+    distance: 'Distance',
+    signal: 'Signal',
+    position: 'Position',
+    waiting: 'Waiting for the network…',
   },
   units: { volt: 'V', amp: 'A', milliamp: 'mA', watt: 'W', ohm: 'Ω' },
 }
