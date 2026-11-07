@@ -1,0 +1,1352 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/vazirmatn";
+@import "@xyflow/react/dist/style.css" layer(base);
+
+/* the agent skill folder holds large script files with no app classes in them */
+@source not "../.claude";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+    --font-heading: var(--font-sans);
+    --font-sans: var(--app-font);
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar: var(--sidebar);
+    --color-chart-5: var(--chart-5);
+    --color-chart-4: var(--chart-4);
+    --color-chart-3: var(--chart-3);
+    --color-chart-2: var(--chart-2);
+    --color-chart-1: var(--chart-1);
+    --color-ring: var(--ring);
+    --color-input: var(--input);
+    --color-border: var(--border);
+    --color-destructive: var(--destructive);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent: var(--accent);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-muted: var(--muted);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary: var(--secondary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary: var(--primary);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-popover: var(--popover);
+    --color-card-foreground: var(--card-foreground);
+    --color-card: var(--card);
+    --color-foreground: var(--foreground);
+    --color-background: var(--background);
+    --radius-sm: calc(var(--radius) * 0.6);
+    --radius-md: calc(var(--radius) * 0.8);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) * 1.4);
+    --radius-2xl: calc(var(--radius) * 1.8);
+    --radius-3xl: calc(var(--radius) * 2.2);
+    --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+    /* the logo's two colours: bulb red for actions, filament orange for focus and highlights;
+       the greys lean warm so they sit with both */
+    --background: oklch(0.993 0.003 80);
+    --foreground: oklch(0.2 0.015 40);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.2 0.015 40);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.2 0.015 40);
+    --primary: oklch(0.581 0.238 29.2);
+    --primary-foreground: oklch(0.99 0 0);
+    --secondary: oklch(0.962 0.012 75);
+    --secondary-foreground: oklch(0.3 0.04 45);
+    --muted: oklch(0.962 0.007 75);
+    --muted-foreground: oklch(0.5 0.02 50);
+    --accent: oklch(0.96 0.035 80);
+    --accent-foreground: oklch(0.32 0.07 50);
+    --destructive: oklch(0.577 0.245 27.325);
+    --border: oklch(0.915 0.01 70);
+    --input: oklch(0.9 0.012 70);
+    --ring: oklch(0.787 0.164 78.1);
+    --chart-1: oklch(0.87 0 0);
+    --chart-2: oklch(0.556 0 0);
+    --chart-3: oklch(0.439 0 0);
+    --chart-4: oklch(0.371 0 0);
+    --chart-5: oklch(0.269 0 0);
+    --radius: 0.375rem;
+    --sidebar: oklch(0.993 0.003 80);
+    --sidebar-foreground: oklch(0.2 0.015 40);
+    --sidebar-primary: oklch(0.581 0.238 29.2);
+    --sidebar-primary-foreground: oklch(0.99 0 0);
+    --sidebar-accent: oklch(0.96 0.03 80);
+    --sidebar-accent-foreground: oklch(0.2 0.015 40);
+    --sidebar-border: oklch(0.915 0.01 70);
+    --sidebar-ring: oklch(0.787 0.164 78.1);
+}
+
+.dark {
+    --background: oklch(0.175 0.012 45);
+    --foreground: oklch(0.96 0.008 80);
+    --card: oklch(0.22 0.014 45);
+    --card-foreground: oklch(0.96 0.008 80);
+    --popover: oklch(0.22 0.016 45);
+    --popover-foreground: oklch(0.96 0.008 80);
+    --primary: oklch(0.6 0.235 29);
+    --primary-foreground: oklch(0.99 0 0);
+    --secondary: oklch(0.26 0.016 45);
+    --secondary-foreground: oklch(0.96 0.008 80);
+    --muted: oklch(0.25 0.014 45);
+    --muted-foreground: oklch(0.72 0.02 70);
+    --accent: oklch(0.3 0.04 55);
+    --accent-foreground: oklch(0.96 0.008 80);
+    --destructive: oklch(0.704 0.191 22.216);
+    --border: oklch(1 0 0 / 9%);
+    --input: oklch(1 0 0 / 14%);
+    --ring: oklch(0.79 0.16 78);
+    --chart-1: oklch(0.87 0 0);
+    --chart-2: oklch(0.556 0 0);
+    --chart-3: oklch(0.439 0 0);
+    --chart-4: oklch(0.371 0 0);
+    --chart-5: oklch(0.269 0 0);
+    --sidebar: oklch(0.175 0.012 45);
+    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-primary: oklch(0.6 0.235 29);
+    --sidebar-primary-foreground: oklch(0.99 0 0);
+    --sidebar-accent: oklch(0.27 0.03 55);
+    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.79 0.16 78);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+    }
+  body {
+    @apply bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    }
+  button:not(:disabled), [role="button"]:not(:disabled) {
+    cursor: pointer;
+    }
+  html {
+    @apply font-sans;
+    caret-color: var(--primary);
+    scrollbar-color: color-mix(in oklch, var(--foreground) 18%, transparent) transparent;
+    }
+  ::selection {
+    background: color-mix(in oklch, var(--primary) 22%, transparent);
+    }
+}
+/* ───────────────────────── Circuit Lab ───────────────────────── */
+
+:root {
+  /* Geist has no Arabic letters, so Persian and Arabic words inside English
+   * text (like the language menu) fall through to Vazirmatn, not a system font */
+  --app-font: 'Geist Variable', 'Vazirmatn Variable', sans-serif;
+  --board-bg: oklch(0.962 0.008 75);
+  --board-dots: oklch(0.55 0.03 60 / 0.26);
+  --wire-outline: oklch(0.25 0.02 50 / 0.5);
+  --terminal-ring: oklch(0.45 0.02 50);
+  --stage-bg: oklch(0.975 0.006 75);
+  --stage-line: oklch(0.3 0.03 50 / 0.07);
+  --stage-hole: oklch(0.3 0.03 50 / 0.11);
+  --card-highlight: oklch(1 0 0 / 0.9);
+  --shadow-card:
+    0 1px 2px oklch(0.25 0.03 40 / 0.06),
+    0 8px 20px -10px oklch(0.25 0.03 40 / 0.22);
+  --shadow-float:
+    0 1px 2px oklch(0.25 0.03 40 / 0.05),
+    0 12px 32px -12px oklch(0.25 0.03 40 / 0.28);
+}
+
+html[lang='fa'],
+html[lang='ar'] {
+  --app-font: 'Vazirmatn Variable', 'Geist Variable', sans-serif;
+}
+
+/* any Persian or Arabic snippet, whatever the page language
+ * (in the base layer, so utilities like font-mono still win) */
+@layer base {
+  [lang='fa'],
+  [lang='ar'] {
+    font-family: 'Vazirmatn Variable', 'Geist Variable', sans-serif;
+  }
+}
+
+.dark {
+  /* the board becomes a dark room so lamps and LEDs really shine */
+  --board-bg: oklch(0.135 0.012 45);
+  --board-dots: oklch(0.75 0.03 70 / 0.14);
+  --wire-outline: oklch(0 0 0 / 0.55);
+  --terminal-ring: oklch(0.8 0.02 60);
+  --stage-bg: oklch(0.165 0.012 45);
+  --stage-line: oklch(1 0 0 / 0.06);
+  --stage-hole: oklch(1 0 0 / 0.07);
+  --card-highlight: oklch(1 0 0 / 0.06);
+  --shadow-card:
+    0 1px 2px oklch(0 0 0 / 0.3),
+    0 10px 24px -12px oklch(0 0 0 / 0.6);
+  --shadow-float:
+    0 1px 2px oklch(0 0 0 / 0.3),
+    0 14px 36px -12px oklch(0 0 0 / 0.7);
+}
+
+.board {
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%, color-mix(in oklch, var(--primary) 6%, transparent), transparent 70%),
+    var(--board-bg);
+}
+
+.board .react-flow {
+  --xy-background-color: transparent;
+  --xy-background-pattern-dots-color-default: var(--board-dots);
+  --xy-minimap-background-color: var(--card);
+  --xy-minimap-mask-background-color: color-mix(in oklch, var(--background) 65%, transparent);
+  --xy-controls-button-background-color: var(--card);
+  --xy-attribution-background-color: transparent;
+  --xy-selection-background-color: color-mix(in oklch, var(--primary) 10%, transparent);
+  --xy-selection-border: 1px dashed var(--primary);
+}
+
+.board .react-flow__attribution {
+  opacity: 0.5;
+  font-size: 9px;
+}
+
+.board .react-flow__node-part {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.board .react-flow__node-part.selectable:focus-visible .part-node {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* Radix wraps scroll-area content in a `display: table` box that grows to fit
+ * wide content, so rows and code blocks ran off the side of the panels.
+ * Panels must fit their own width instead. */
+[data-slot='scroll-area-viewport'] > div {
+  display: block !important;
+  min-width: 0 !important;
+}
+
+/* floating panels on the board share one look */
+/* solid, not blurred: a backdrop blur over the live 3D canvas is re-computed every frame */
+.float-panel {
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: var(--shadow-float);
+}
+
+/* ── part cards ──
+ * Everything a part shows lives inside its card: a title row, a framed
+ * window for the 3D model, and one control row. Every card has the same
+ * height so a board of parts lines up neatly. */
+
+.part-node {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--card-foreground);
+  box-shadow: var(--shadow-card);
+  transition:
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
+}
+
+.part-node__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  height: 20px;
+  padding-inline: 4px 3px;
+}
+
+/* the name and the state word share one 20 px line; a word that doesn't fit wraps out of sight */
+.part-node__label {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  align-items: center;
+  column-gap: 6px;
+  min-width: 0;
+  height: 20px;
+  overflow: hidden;
+}
+
+.part-node__status {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 20px;
+  margin-inline-start: auto;
+}
+
+.part-node__name {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  line-height: 20px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12.5px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+/* a thin light edge along the top, like the bevel of a real plastic tile */
+.part-node::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 1px 0 var(--card-highlight);
+  pointer-events: none;
+}
+
+/* status: a tiny indicator lamp, like the one on a real power supply */
+.status-led {
+  --led: oklch(0.78 0.01 60);
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 35% 30%, color-mix(in oklch, var(--led) 45%, white), var(--led) 60%);
+  box-shadow:
+    inset 0 -1px 1px oklch(0 0 0 / 0.25),
+    0 0 0 1.5px color-mix(in oklch, var(--led) 22%, transparent);
+  transition:
+    background 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.status-led--lit {
+  box-shadow:
+    inset 0 -1px 1px oklch(0 0 0 / 0.2),
+    0 0 0 1.5px color-mix(in oklch, var(--led) 28%, transparent),
+    0 0 8px 1px color-mix(in oklch, var(--led) 70%, transparent);
+}
+
+.status-led--blink {
+  animation: led-blink 0.7s ease-in-out infinite alternate;
+}
+
+@keyframes led-blink {
+  to {
+    opacity: 0.35;
+  }
+}
+
+/* the 3D model is drawn inside this window and never outside it;
+ * the faint holes behind it are a breadboard */
+.part-node__stage {
+  position: relative;
+  height: 100px;
+  border-radius: 6px;
+  overflow: hidden;
+  background:
+    radial-gradient(110% 85% at 50% 0%, color-mix(in oklch, var(--part-accent) 11%, transparent), transparent 72%) no-repeat,
+    radial-gradient(circle, var(--stage-hole) 0 1px, transparent 1.5px) 5px 5px / 10px 10px,
+    var(--stage-bg);
+  box-shadow:
+    inset 0 0 0 1px var(--stage-line),
+    inset 0 2px 4px oklch(0 0 0 / 0.05);
+}
+
+.part-node__control {
+  height: 28px;
+  min-width: 0;
+}
+
+.part-node--selected {
+  border-color: var(--primary);
+  box-shadow:
+    0 0 0 3px color-mix(in oklch, var(--primary) 24%, transparent),
+    var(--shadow-float);
+}
+
+.part-node--active:not(.part-node--selected) {
+  border-color: color-mix(in oklch, var(--part-accent) 50%, var(--border));
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, var(--part-accent) 30%, transparent),
+    0 12px 28px -12px color-mix(in oklch, var(--part-accent) 55%, transparent);
+}
+
+/* the red pulse animates only opacity, which the GPU handles without repainting */
+.part-node--danger::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  box-shadow:
+    0 0 0 4px oklch(0.63 0.24 27 / 0.8),
+    0 0 30px oklch(0.63 0.24 27 / 0.6);
+  pointer-events: none;
+  animation: danger-pulse 0.8s ease-in-out infinite alternate;
+}
+
+.part-node__light {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  z-index: -1;
+  width: 560px;
+  height: 560px;
+  border-radius: 9999px;
+  pointer-events: none;
+  transition:
+    opacity 0.45s ease,
+    transform 0.45s ease;
+}
+
+.dark .part-node__light {
+  mix-blend-mode: screen;
+}
+
+/* small segmented controls and steppers inside a card */
+.node-track {
+  height: 28px;
+  border-radius: 6px;
+  background: var(--muted);
+  box-shadow: inset 0 0 0 1px var(--stage-line);
+}
+
+.node-track [data-slot='slider-track'] {
+  background: color-mix(in oklch, var(--foreground) 12%, transparent);
+}
+
+.node-track [data-slot='slider-range'] {
+  background: var(--part-accent);
+}
+
+.node-track [data-slot='slider-thumb'] {
+  border-color: var(--part-accent);
+  box-shadow: 0 1px 3px oklch(0 0 0 / 0.2);
+}
+
+/* ── terminals (React Flow handles) ── */
+
+/* terminals look like little metal screw terminals */
+.react-flow__handle.terminal {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  border: 2.5px solid var(--card);
+  background: radial-gradient(circle at 35% 30%, #fafafa 0%, #a1a1aa 48%, #52525b 100%);
+  box-shadow:
+    0 0 0 1px oklch(0 0 0 / 0.28),
+    0 2px 5px oklch(0 0 0 / 0.28);
+  cursor: crosshair;
+  transition:
+    scale 0.15s ease,
+    box-shadow 0.15s ease;
+  z-index: 5;
+}
+
+/* the screw slot on plain terminals */
+.react-flow__handle.terminal::after {
+  content: '';
+  width: 8px;
+  height: 1.6px;
+  border-radius: 1px;
+  background: oklch(0.25 0 0 / 0.55);
+  rotate: -40deg;
+  pointer-events: none;
+}
+
+.react-flow__handle.terminal--plus::after,
+.react-flow__handle.terminal--minus::after {
+  display: none;
+}
+
+/* a much bigger invisible hit area for small fingers */
+.react-flow__handle.terminal::before {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  border-radius: 9999px;
+}
+
+@media (pointer: coarse) {
+  .react-flow__handle.terminal::before {
+    inset: -16px;
+  }
+}
+
+.react-flow__handle.terminal:hover,
+.react-flow__handle.terminal.connectingfrom {
+  scale: 1.25;
+}
+
+.react-flow__handle.terminal.connectingto,
+.react-flow__handle.terminal.valid {
+  scale: 1.4;
+  box-shadow:
+    0 0 0 3px var(--primary),
+    0 0 18px var(--primary);
+}
+
+.react-flow__handle.terminal--plus {
+  background: radial-gradient(circle at 35% 30%, #fecaca 0%, #ef4444 45%, #991b1b 100%);
+}
+
+.react-flow__handle.terminal--minus {
+  background: radial-gradient(circle at 35% 30%, #a1a1aa 0%, #3f3f46 45%, #09090b 100%);
+}
+
+.dark .react-flow__handle.terminal--minus {
+  background: radial-gradient(circle at 35% 30%, #d4d4d8 0%, #52525b 50%, #18181b 100%);
+}
+
+.terminal__label {
+  color: white;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  text-shadow: 0 1px 0 oklch(0 0 0 / 0.35);
+  pointer-events: none;
+}
+
+/* B, C, E on a transistor and S on sensors: a letter instead of a screw slot */
+.react-flow__handle.terminal--lettered::after {
+  display: none;
+}
+
+.terminal--lettered .terminal__label {
+  font-size: 10px;
+}
+
+/* Arduino header pins: small black sockets with their name printed on them */
+.react-flow__handle.terminal--pin {
+  width: 30px;
+  height: 17px;
+  border-radius: 3px;
+  border-width: 2px;
+  background: linear-gradient(180deg, #3f3f46, #18181b);
+}
+
+.react-flow__handle.terminal--pin::after {
+  display: none;
+}
+
+.react-flow__handle.terminal--pin.terminal--plus {
+  background: linear-gradient(180deg, #f87171, #b91c1c);
+}
+
+.react-flow__handle.terminal--pin:hover,
+.react-flow__handle.terminal--pin.connectingfrom {
+  scale: 1.12;
+}
+
+.terminal__pin-label {
+  color: white;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* three-letter terminals (COM, OUT) are a small pill instead of a round screw */
+.react-flow__handle.terminal--long {
+  width: 30px;
+  border-radius: 10px;
+}
+
+.terminal--long .terminal__label {
+  font-size: 8.5px;
+  letter-spacing: 0.02em;
+}
+
+/* the window and the control row keep clear of header pins standing on the card edge */
+.part-node--pins {
+  padding-inline: 22px;
+}
+
+/* ── screens ──
+ * Screens show their real front in the card's window instead of a 3D model:
+ * a 7-segment module, an LCD or OLED on its board, a colour TFT, or a framed
+ * LED sign / video wall. Each module sits inside the window, never outside. */
+
+.screen-module {
+  position: absolute;
+  inset: 6px;
+  display: grid;
+  place-items: center;
+  border-radius: 4px;
+}
+
+/* a faint plug in the middle of a screen that has no power */
+.screen-nopower {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: oklch(1 0 0 / 0.3);
+  pointer-events: none;
+}
+
+.screen-nopower svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* canvases drawn at the screen's real pixel size, enlarged without blur */
+.screen-pixels {
+  display: block;
+  image-rendering: pixelated;
+}
+
+/* ── 7-segment module: a black block with red bars and silver legs ── */
+.seg-module {
+  inset: 9px 8px 13px;
+  padding: 7px 9px;
+  /* one fixed cell: the digits scale to fit it, so a tall single digit can't grow past the card */
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+  background: linear-gradient(180deg, #232327 0%, #0e0e10 55%, #060607 100%);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.1),
+    inset 0 0 0 1px oklch(0 0 0 / 0.9),
+    0 3px 7px oklch(0 0 0 / 0.35);
+}
+
+.seg-module::after {
+  content: '';
+  position: absolute;
+  inset: auto 16% -6px;
+  height: 6px;
+  background: repeating-linear-gradient(90deg, #c4c4ca 0 1.6px, transparent 1.6px 8px);
+  opacity: 0.85;
+}
+
+.seg-digits {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.seg-digits .seg-off {
+  fill: color-mix(in oklch, var(--seg) 9%, #121214);
+}
+
+.seg-digits .seg-on {
+  fill: var(--seg);
+  filter: drop-shadow(0 0 1.6px color-mix(in oklch, var(--seg) 80%, transparent));
+}
+
+/* ── character LCD: green board, black bezel, backlit glass ── */
+.lcd-pcb {
+  padding-top: 7px;
+  border-radius: 4px;
+  background:
+    radial-gradient(circle at 6px 6px, #d9dde2 0 1.6px, #0c4a2a 1.8px 3px, transparent 3.2px),
+    radial-gradient(circle at calc(100% - 6px) 6px, #d9dde2 0 1.6px, #0c4a2a 1.8px 3px, transparent 3.2px),
+    radial-gradient(circle at 6px calc(100% - 6px), #d9dde2 0 1.6px, #0c4a2a 1.8px 3px, transparent 3.2px),
+    radial-gradient(circle at calc(100% - 6px) calc(100% - 6px), #d9dde2 0 1.6px, #0c4a2a 1.8px 3px, transparent 3.2px),
+    linear-gradient(160deg, #1f8a4c, #0e5a31);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.16),
+    inset 0 0 0 1px oklch(0 0 0 / 0.25),
+    0 2px 6px oklch(0 0 0 / 0.3);
+}
+
+/* the row of 16 solder pads along the top edge */
+.lcd-pcb::before {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 16px;
+  width: 78px;
+  height: 3px;
+  background: repeating-linear-gradient(90deg, #e9c46a 0 3px, transparent 3px 5px);
+  border-radius: 1px;
+}
+
+.lcd-bezel {
+  padding: 4px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #19191c, #050506);
+  box-shadow: 0 1px 0 oklch(1 0 0 / 0.08);
+}
+
+.lcd-glass {
+  position: relative;
+  padding: 4px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #5a6530, #3f4823);
+  box-shadow: inset 0 1px 4px oklch(0 0 0 / 0.45);
+  transition: background 0.3s ease;
+}
+
+.lcd-glass[data-tint='blue'] {
+  background: linear-gradient(180deg, #1e2a52, #131a35);
+}
+
+.lcd-glass[data-tint='green'][data-on] {
+  background: radial-gradient(130% 160% at 50% 30%, #d6ee6c, #a9cb40 62%, #91b232);
+}
+
+.lcd-glass[data-tint='blue'][data-on] {
+  background: radial-gradient(130% 160% at 50% 30%, #6a96ff, #3561f2 62%, #2648d4);
+}
+
+.lcd-glass canvas {
+  display: block;
+}
+
+/* ── OLED: blue board, four pins on top, black glass ── */
+.oled-pcb {
+  padding-top: 12px;
+  border-radius: 4px;
+  background:
+    radial-gradient(circle at 7px 7px, #d9dde2 0 1.5px, #1e3a8a 1.7px 2.8px, transparent 3px),
+    radial-gradient(circle at calc(100% - 7px) 7px, #d9dde2 0 1.5px, #1e3a8a 1.7px 2.8px, transparent 3px),
+    linear-gradient(160deg, #2f6df0, #1d3f9e);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.18),
+    inset 0 0 0 1px oklch(0 0 0 / 0.25),
+    0 2px 6px oklch(0 0 0 / 0.3);
+}
+
+.oled-pins {
+  position: absolute;
+  top: 3px;
+  left: 50%;
+  width: 34px;
+  height: 6px;
+  translate: -50% 0;
+  background: radial-gradient(circle, #f2cf6b 0 1.6px, #8a6b1f 1.8px 2.4px, transparent 2.6px) 0 0 / 8.5px 6px repeat-x;
+}
+
+.oled-glass,
+.tft-glass {
+  position: relative;
+  border-radius: 2px;
+  background: #040506;
+  box-shadow:
+    inset 0 0 0 1px oklch(1 0 0 / 0.06),
+    0 1px 2px oklch(0 0 0 / 0.5);
+}
+
+.oled-glass {
+  padding: 3px 4px;
+}
+
+.oled-glass canvas {
+  width: 128px;
+  height: 64px;
+}
+
+/* a little reflection on the glass */
+.oled-glass::after,
+.tft-glass::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(155deg, oklch(1 0 0 / 0.07), transparent 38%);
+  pointer-events: none;
+}
+
+/* ── colour TFT: red board, pins down the left side ── */
+.tft-pcb {
+  padding-left: 8px;
+  border-radius: 4px;
+  background:
+    radial-gradient(circle at calc(100% - 6px) 6px, #d9dde2 0 1.5px, #7f1d1d 1.7px 2.8px, transparent 3px),
+    radial-gradient(circle at calc(100% - 6px) calc(100% - 6px), #d9dde2 0 1.5px, #7f1d1d 1.7px 2.8px, transparent 3px),
+    linear-gradient(160deg, #e0383d, #9b1c1f);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.18),
+    inset 0 0 0 1px oklch(0 0 0 / 0.25),
+    0 2px 6px oklch(0 0 0 / 0.3);
+}
+
+.tft-pins {
+  position: absolute;
+  top: 50%;
+  left: 3px;
+  width: 6px;
+  height: 92px;
+  translate: 0 -50%;
+  background: radial-gradient(circle, #f2cf6b 0 1.5px, #7c5a12 1.7px 2.3px, transparent 2.5px) 0 0 / 6px 7.6px repeat-y;
+}
+
+.tft-glass {
+  padding: 5px;
+}
+
+.tft-glass canvas {
+  display: block;
+  width: 160px;
+  height: 120px;
+}
+
+/* ── LED sign and city TV: an aluminium frame (sign) or a dark cabinet (wall) ── */
+.led-housing {
+  padding: 5px;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #c3c8d0, #8d939d 55%, #6f7580);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.55),
+    inset 0 -1px 0 oklch(0 0 0 / 0.25),
+    0 3px 8px oklch(0 0 0 / 0.3);
+}
+
+.led-housing--wall {
+  background: linear-gradient(180deg, #34373e, #1b1d22);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.12),
+    inset 0 0 0 1px oklch(0 0 0 / 0.6),
+    0 4px 12px oklch(0 0 0 / 0.35);
+}
+
+.led-screen {
+  position: relative;
+  overflow: hidden;
+  background: #0b0b0d;
+}
+
+.led-screen canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* the light of a single-colour sign spills a little onto its frame */
+.led-screen[data-glow] {
+  box-shadow: 0 0 14px -3px color-mix(in oklch, var(--glow) 70%, transparent);
+}
+
+/* one round dot per LED: the gaps between pixels go dark */
+.led-mask {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(closest-side, transparent 60%, oklch(0 0 0 / 0.9) 100%);
+  background-size: calc(100% / var(--led-w)) calc(100% / var(--led-h));
+}
+
+/* the seams between modules and panels */
+.led-seams {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(90deg, oklch(0 0 0 / 0.45) 0 1px, transparent 1px),
+    linear-gradient(180deg, oklch(0 0 0 / 0.45) 0 1px, transparent 1px);
+  background-size:
+    calc(100% / var(--cols)) 100%,
+    100% calc(100% / var(--rows));
+  background-position: -0.5px 0, 0 -0.5px;
+}
+
+/* a small text field inside a card: the words on an LED sign */
+.node-input {
+  min-width: 0;
+  flex: 1;
+  height: 24px;
+  border-radius: 4px;
+  padding-inline: 8px;
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 11.5px;
+  font-weight: 550;
+  outline: none;
+  box-shadow: inset 0 0 0 1px var(--stage-line);
+  transition: box-shadow 0.15s ease;
+}
+
+.node-input:focus-visible {
+  box-shadow:
+    inset 0 0 0 1px var(--part-accent),
+    0 0 0 3px color-mix(in oklch, var(--part-accent) 22%, transparent);
+}
+
+/* the meters' digital readout: a small green LCD */
+.lcd {
+  background: linear-gradient(180deg, #d3e2b6, #bccf98);
+  color: #1d2a12;
+  box-shadow:
+    inset 0 1px 2px oklch(0 0 0 / 0.25),
+    inset 0 0 0 1px oklch(0 0 0 / 0.12);
+}
+
+.dark .lcd {
+  background: linear-gradient(180deg, #182417, #101a10);
+  color: #a7f3a0;
+}
+
+.terminal-legend {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  color: white;
+  font-weight: 800;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.terminal-legend--plus {
+  background: #ef4444;
+}
+
+.terminal-legend--minus {
+  background: #27272a;
+}
+
+.dark .terminal-legend--minus {
+  background: #52525b;
+}
+
+/* ── wires ── */
+
+.react-flow__edge-wire {
+  cursor: pointer;
+}
+
+.wire-core {
+  transition: filter 0.2s ease;
+}
+
+.wire-core--selected {
+  filter: drop-shadow(0 0 5px var(--primary));
+}
+
+/* the moving dots: no filter here, a filter would be re-rendered on every frame */
+.wire-flow {
+  stroke: #fff7c2;
+  stroke-width: 4px;
+  animation-name: wire-flow;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  pointer-events: none;
+}
+
+/* a wide, faint copy of the moving dots: their glow, without a per-frame filter */
+.wire-flow.wire-glow {
+  stroke: #facc15;
+  stroke-width: 10px;
+  opacity: 0.3;
+}
+
+.wire-hot {
+  stroke: #f97316;
+  stroke-width: 12px;
+  opacity: 0.5;
+  filter: blur(2px);
+  animation: hot-pulse 0.45s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+.wire-drawing {
+  animation: wire-flow 0.5s linear infinite;
+}
+
+@keyframes wire-flow {
+  to {
+    stroke-dashoffset: -18px;
+  }
+}
+
+@keyframes hot-pulse {
+  from {
+    opacity: 0.25;
+  }
+  to {
+    opacity: 0.7;
+  }
+}
+
+@keyframes danger-pulse {
+  from {
+    opacity: 0.35;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.short-vignette {
+  box-shadow: inset 0 0 140px 30px oklch(0.63 0.24 27 / 0.4);
+  animation: vignette 0.9s ease-in-out infinite alternate;
+}
+
+@keyframes vignette {
+  from {
+    opacity: 0.55;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ── drag from the parts box ── */
+
+.is-dragging-part,
+.is-dragging-part * {
+  cursor: grabbing !important;
+  user-select: none;
+}
+
+/* keeps the bottom bar clear of the phone's home indicator */
+.pb-safe {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wire-flow,
+  .wire-drawing,
+  .wire-hot,
+  .part-node--danger::before,
+  .status-led--blink,
+  .short-vignette {
+    animation: none;
+  }
+}
+
+/* ── oscilloscope ──
+ * A dark instrument front inside the card's window: a green phosphor screen
+ * with its grid, and a slim panel of knobs and the probe socket. */
+
+.scope-face {
+  position: absolute;
+  inset: 6px;
+  display: flex;
+  gap: 5px;
+  padding: 5px;
+  border-radius: 5px;
+  background: linear-gradient(180deg, #353c46, #1c2128);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.12),
+    0 0 0 1px oklch(0 0 0 / 0.35),
+    0 2px 4px oklch(0 0 0 / 0.25);
+}
+
+.scope-screen {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 3px;
+  background: radial-gradient(120% 120% at 50% 45%, #061a0e, #020906);
+  box-shadow:
+    inset 0 0 0 1px oklch(0 0 0 / 0.7),
+    inset 0 0 10px oklch(0 0 0 / 0.9);
+  transition: background 0.4s ease;
+}
+
+.scope-screen--on {
+  background: radial-gradient(120% 120% at 50% 45%, #0c2c18, #03110a);
+}
+
+/* the glass: a faint reflection across the top */
+.scope-screen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(160deg, oklch(1 0 0 / 0.08), transparent 42%);
+  pointer-events: none;
+}
+
+.scope-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  width: 16px;
+  padding-block: 1px;
+}
+
+.scope-led {
+  width: 5px;
+  height: 5px;
+  border-radius: 9999px;
+  background: #3b463d;
+  transition:
+    background 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.scope-led--on {
+  background: #4ade80;
+  box-shadow: 0 0 5px 1px oklch(0.8 0.2 150 / 0.65);
+}
+
+.scope-knob {
+  position: relative;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 35% 30%, #707784, #1f2329 72%);
+  box-shadow:
+    0 1px 1px oklch(0 0 0 / 0.5),
+    inset 0 0 0 1px oklch(0 0 0 / 0.45);
+}
+
+.scope-knob::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  width: 1.5px;
+  height: 5px;
+  margin-left: -0.75px;
+  border-radius: 1px;
+  background: #e5e7eb;
+}
+
+.scope-knob--small {
+  width: 11px;
+  height: 11px;
+  rotate: 50deg;
+}
+
+/* the probe's socket: a gold ring around a dark hole */
+.scope-jack {
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, #0b0b0c 0 2px, #e2bd4a 2.5px 3.4px, #8d6d14 3.9px 4.6px, transparent 5px);
+}
+
+/* ── examples gallery ──
+ * Cards hold a little picture on a strip of breadboard, tinted with their
+ * shelf's colour (--shelf), and lift a little under the pointer. */
+
+.example-card {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--card-foreground);
+  text-align: start;
+  box-shadow: var(--shadow-card);
+  outline: none;
+  transition:
+    translate 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.example-card:hover {
+  translate: 0 -2px;
+  border-color: color-mix(in oklch, var(--shelf) 45%, var(--border));
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, var(--shelf) 18%, transparent),
+    var(--shadow-float);
+}
+
+.example-card:active {
+  translate: 0 0;
+}
+
+.example-card:focus-visible {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 45%, transparent);
+}
+
+.example-thumb {
+  position: relative;
+  height: 88px;
+  flex-shrink: 0;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 95% at 50% 0%, color-mix(in oklch, var(--shelf) 16%, transparent), transparent 72%) no-repeat,
+    radial-gradient(circle, var(--stage-hole) 0 1px, transparent 1.5px) 5px 5px / 10px 10px,
+    var(--stage-bg);
+  box-shadow: inset 0 -1px 0 var(--stage-line);
+}
+
+@media (max-width: 639px) {
+  .example-thumb {
+    height: 76px;
+  }
+}
+
+/* the shelves: a rail of tabs on wide screens, a grid of chips on phones */
+.shelf-tab {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  border-radius: calc(var(--radius) * 0.8);
+  color: var(--muted-foreground);
+  font-weight: 550;
+  text-align: start;
+  outline: none;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.shelf-tab:hover {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.shelf-tab:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 45%, transparent);
+}
+
+.shelf-tab[aria-pressed='true'] {
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow:
+    inset 0 0 0 1px var(--border),
+    var(--shadow-card);
+}
+
+.shelf-tab__icon {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  border-radius: calc(var(--radius) * 0.8);
+  background: color-mix(in oklch, var(--shelf, var(--muted-foreground)) 12%, transparent);
+}
+
+.shelf-tab--rail {
+  gap: 10px;
+  padding: 6px 10px 6px 6px;
+  font-size: 13px;
+}
+
+[dir='rtl'] .shelf-tab--rail {
+  padding: 6px 6px 6px 10px;
+}
+
+.shelf-tab--rail .shelf-tab__icon {
+  width: 32px;
+  height: 32px;
+}
+
+.shelf-tab--chip {
+  height: 38px;
+  gap: 6px;
+  padding-inline: 6px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  font-size: 12.5px;
+}
+
+.shelf-tab--chip .shelf-tab__icon {
+  width: 26px;
+  height: 26px;
+}
+
+.shelf-tab--chip .shelf-tab__icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.shelf-tab--chip[aria-pressed='true'] {
+  border-color: color-mix(in oklch, var(--shelf, var(--primary)) 55%, var(--border));
+  background: color-mix(in oklch, var(--shelf, var(--primary)) 8%, var(--card));
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .example-card,
+  .example-card:hover {
+    translate: none;
+  }
+}
+
+/* ── the AI board ──
+ * The card's "Ask" button wears the logo's red; while the model thinks, the
+ * title lamp breathes and the card's edge glows orange, like a filament. */
+
+.ai-ask {
+  --llama-eyes: #5c0a00;
+  background: linear-gradient(180deg, #f2382c, #d40000);
+  box-shadow:
+    inset 0 1px 0 oklch(1 0 0 / 0.22),
+    0 1px 2px oklch(0.35 0.15 29 / 0.35);
+}
+
+.ai-ask:hover {
+  background: linear-gradient(180deg, #f64a3f, #dc0d0d);
+}
+
+.ai-ask--thinking {
+  background: linear-gradient(180deg, #e0281d, #bf0000);
+}
+
+.ai-dots > span {
+  animation: ai-dot 1s ease-in-out infinite;
+}
+
+.ai-dots > span:nth-child(2) {
+  animation-delay: 0.16s;
+}
+
+.ai-dots > span:nth-child(3) {
+  animation-delay: 0.32s;
+}
+
+@keyframes ai-dot {
+  0%,
+  70%,
+  100% {
+    opacity: 0.45;
+    transform: translateY(0);
+  }
+  35% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+.status-led--thinking {
+  animation: ai-lamp 1.1s ease-in-out infinite alternate;
+}
+
+@keyframes ai-lamp {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0.4;
+  }
+}
+
+.part-node--thinking:not(.part-node--selected) {
+  border-color: color-mix(in oklch, #f2aa00 55%, var(--border));
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, #f2aa00 30%, transparent),
+    0 12px 28px -12px color-mix(in oklch, #f2aa00 60%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ai-dots > span,
+  .status-led--thinking {
+    animation: none;
+  }
+}
