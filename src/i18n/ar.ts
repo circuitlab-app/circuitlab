@@ -2,7 +2,7 @@ import type { Dictionary } from './en'
 
 /** Arabic (العربية) */
 export const ar: Dictionary = {
-  app: { title: 'مختبر الدوائر', subtitle: 'ابنِ الدائرة وشغّلها!', madeBy: 'من منتجات SBC' },
+  app: { title: 'مختبر الدوائر', subtitle: 'ابنِ الدائرة وشغّلها!' },
   parts: {
     battery: {
       name: 'بطارية',

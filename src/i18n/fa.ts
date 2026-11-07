@@ -2,7 +2,7 @@ import type { Dictionary } from './en'
 
 /** Persian (فارسی) */
 export const fa: Dictionary = {
-  app: { title: 'آزمایشگاه مدار', subtitle: 'مدار بساز، روشنش کن!', madeBy: 'محصولی از SBC' },
+  app: { title: 'آزمایشگاه مدار', subtitle: 'مدار بساز، روشنش کن!' },
   parts: {
     battery: {
       name: 'باتری',

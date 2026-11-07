@@ -21,8 +21,6 @@ export type Dictionary = {
   app: {
     title: string
     subtitle: string
-    /** the maker's line under the logo in the help window */
-    madeBy: string
   }
   parts: Record<PartType, PartText>
   /** the label of each sensor's control: what you change in the world around it */
@@ -410,7 +408,7 @@ export type Dictionary = {
 
 /** English: the default language. Short, everyday words a young child can read. */
 export const en: Dictionary = {
-  app: { title: 'Circuit Lab', subtitle: 'Build it. Light it up!', madeBy: 'A product of SBC' },
+  app: { title: 'Circuit Lab', subtitle: 'Build it. Light it up!' },
   parts: {
     battery: {
       name: 'Battery',
