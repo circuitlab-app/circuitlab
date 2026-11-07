@@ -341,6 +341,8 @@ export type Dictionary = {
       meterBeep: string
       probePower: string
       probeLoose: string
+      beaconHint: string
+      beaconHot: string
     }
     eyes: string
     camera: string
@@ -938,6 +940,11 @@ export const en: Dictionary = {
       description: 'Measures the pressure in a pipe or a well, from 0 to 200 bar. S rises with the pressure.',
       working: 'Measuring',
     },
+    beacon: {
+      name: 'Warning beacon',
+      description: 'A turning warning light, like on a tow truck or a factory machine. Its resistor is built in, so a board pin can run it.',
+      working: 'Flashing',
+    },
   },
   sense: {
     thermistor: 'Heat',
@@ -1188,6 +1195,20 @@ export const en: Dictionary = {
     plcModbus: { name: 'Furnace over Modbus', description: 'The furnace’s temperature goes to the control room on RS-485' },
     plcHydraulic: { name: 'Hydraulic power pack', description: 'The pump builds the pressure, and Wi-Fi sends it to the plant' },
     plcBurner: { name: 'Burner flame safety', description: 'The gas valve stays open only while the flame is seen' },
+    plcCounter: { name: 'Batch counter', description: 'Every box that passes moves the counter on by one' },
+    plcBottling: { name: 'Bottle filling', description: 'The pump fills only while a bottle is under the nozzle' },
+    plcMixer: { name: 'Batch mixer', description: 'Fill, mix and drain: one second each, again and again' },
+    plcSorter: { name: 'Metal sorter', description: 'A metal part on the belt fires the pusher' },
+    plcTwoHand: { name: 'Two-hand press', description: 'The press comes down only while both hands hold a button' },
+    plcCrane: { name: 'Magnet crane', description: 'The lifting magnet holds the steel while the beacon turns' },
+    plcBoiler: { name: 'Boiler thermostat', description: 'The heater glows until the water is hot enough' },
+    plcColdRoom: { name: 'Cold room', description: 'The compressor runs until the room is cold again' },
+    plcSilo: { name: 'Grain silo', description: 'The auger fills the silo until the grain reaches the top' },
+    plcScale: { name: 'Bag-filling scale', description: 'The feeder pours until the bag weighs enough' },
+    plcPaintBooth: { name: 'Paint booth extractor', description: 'More fumes, faster fan; too many sound the horn' },
+    plcRobotArm: { name: 'Pick-and-place robot', description: 'The arm swings and its magnet grips the parts' },
+    plcLightCurtain: { name: 'Laser light curtain', description: 'A hand in the beam stops the machine at once' },
+    plcForklift: { name: 'Forklift crossing', description: 'A forklift turns the blue beacon and shows walkers red' },
     rtuWellhead: { name: 'Wellhead pressure', description: 'The well’s pressure goes out by LoRa; too high sets off the alarm' },
     rtuGasLeak: { name: 'Gas leak alarm', description: 'Poisonous gas at the well: beacon, horn and a text to the supervisor' },
     rtuPumpJack: { name: 'Pump jack', description: 'Lifts oil into the tank and stops when the tank is full' },
@@ -1200,6 +1221,32 @@ export const en: Dictionary = {
     loraFarm: { name: 'LoRa farm sensor', description: 'Sends the soil’s wetness kilometres away, far from any Wi-Fi' },
     wifiDoorbell: { name: 'Wi-Fi doorbell', description: 'Rings inside and tells your phone someone is at the door' },
     gpsBike: { name: 'GPS bike computer', description: 'Finds the bike with GPS and sends it to the phone by Bluetooth' },
+    ecuHazard: { name: 'Hazard lights', description: 'Both orange lights flash together while the relay ticks' },
+    ecuBrakeLights: { name: 'Brake lights', description: 'Press the pedal and all three brake lights come on' },
+    ecuSeatbelt: { name: 'Seatbelt reminder', description: 'Not buckled up? The belt light blinks and the chime sounds' },
+    ecuDomeLight: { name: 'Interior light', description: 'Open the door and the light inside comes on' },
+    ecuFuelGauge: { name: 'Fuel gauge', description: 'The bars show the tank; the orange light warns when it is low' },
+    ecuBattery: { name: 'Battery warning light', description: 'The ECU watches the 12 V battery and warns when it runs flat' },
+    ecuHorn: { name: 'Car horn', description: 'The steering-wheel button sounds the horn through a transistor' },
+    ecuLaneAssist: { name: 'Lane assist', description: 'Drifting over the line shakes the steering wheel and beeps' },
+    ecuClimate: { name: 'Climate control', description: 'Air conditioning when it is hot, the heater when it is cold' },
+    ecuCrash: { name: 'Crash call', description: 'A crash unlocks the doors and texts for help with the car’s place' },
+    ecuShiftLight: { name: 'Shift light', description: 'The rev bars climb and a blue light says when to change gear' },
+    ecuEvCooling: { name: 'EV battery cooling', description: 'The warmer the battery pack, the faster the coolant pump' },
+    ecuDefog: { name: 'Windscreen demister', description: 'Damp air starts the blower to clear the glass' },
+    ecuChildAlert: { name: 'Child left in the car', description: 'Movement in a locked car: horn, lights, a fan and a text' },
+    rtuSolarSite: { name: 'Solar wellhead', description: 'The sun powers a pressure sensor and its LoRa radio' },
+    rtuSeparator: { name: 'Oil and water separator', description: 'The dump valve lets water out when it rises too high' },
+    rtuChoke: { name: 'Choke valve', description: 'The valve closes further as the well’s pressure rises' },
+    rtuEsp: { name: 'Submersible pump', description: 'The pump in the well stops if its motor gets too hot' },
+    rtuDeluge: { name: 'Fire-water deluge', description: 'Fire: red beacon, wailing horn and the fire-water pump' },
+    rtuPigging: { name: 'Pipeline pig detector', description: 'When the pig arrives, the beacon turns and a text goes out' },
+    aiCarLights: { name: 'AI car lights', description: 'Headlights in the dark. Ask for the hazards or the horn' },
+    aiFactoryLine: { name: 'AI factory line', description: 'The belt runs. Teach it to stop when a box arrives' },
+    aiWellGuard: { name: 'AI well guard', description: 'Green while the air is clean. Teach it to warn and text you' },
+    aiWeatherCloud: { name: 'AI weather station', description: 'Red when hot, blue when cold. Ask it to send to the cloud' },
+    aiNightGuard: { name: 'AI night guard', description: 'The blue light keeps watch. Ask for the floodlight' },
+    aiMoodLamp: { name: 'AI mood lamp', description: 'One RGB light: ask for any colour or a rainbow' },
   },
   gallery: {
     title: 'Examples',
@@ -1259,6 +1306,9 @@ export const en: Dictionary = {
       smsGas: 'GAS ALARM at Well 7! Leave the area.',
       smsFlare: 'Well 7: the flare is out! Please check.',
       smsFire: 'Fire at home! Please call for help.',
+      smsCrash: 'Crash detected! Car at 23.588 N, 58.383 E. Sending help.',
+      smsChild: 'A child is still in your car! Please come back now.',
+      smsPig: 'Pipeline: the pig has arrived at the receiver.',
     },
   },
   inspector: {
@@ -1580,6 +1630,8 @@ export const en: Dictionary = {
       meterBeep: 'Beep! The probes are joined by a path, so current can flow.',
       probePower: 'Join + and − to the + and − of the circuit you test. Then touch TIP to a wire.',
       probeLoose: 'No light: the tip touches nothing, or the voltage there is only half way.',
+      beaconHint: 'This beacon has its resistor inside: join + to a board pin (or 5 V) and − to −.',
+      beaconHot: 'Too many volts: it is getting hot! It is made for 5 V.',
     },
     eyes: 'Eyes',
     camera: 'Camera',

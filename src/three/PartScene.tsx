@@ -51,6 +51,7 @@ import { OptocouplerModel } from './models/Optocoupler'
 import { PumpModel } from './models/Pump'
 import { SolenoidModel } from './models/Solenoid'
 import { TrafficLightModel } from './models/TrafficLight'
+import { BeaconModel } from './models/Beacon'
 import { ZenerModel } from './models/Zener'
 import { AiBoardModel } from './models/AiBoard'
 import { CoinCellModel, DynamoModel, LemonModel, PowerBankModel } from './models/Cells'
@@ -135,6 +136,7 @@ const FRAMING = {
   bell: { camera: [0, 0.4, 4.6], scale: 1, lift: 0 },
   barGraph: { camera: [0, 0.4, 4.6], scale: 0.9, lift: 0 },
   trafficLight: { camera: [0, 0.4, 4.6], scale: 1.04, lift: 0 },
+  beacon: { camera: [0, 1.0, 4.4], scale: 0.9, lift: -0.12 },
   fan: { camera: [0, 0.4, 4.6], scale: 1, lift: 0 },
   latch: { camera: [0, 0.4, 4.6], scale: 0.9, lift: 0 },
   counter: { camera: [0, 0.4, 4.6], scale: 0.9, lift: 0 },
@@ -519,6 +521,16 @@ export function PartScene({
       return (
         <Stage {...FRAMING.trafficLight}>
           <TrafficLightModel r={result?.channels?.R ?? 0} y={result?.channels?.Y ?? 0} g={result?.channels?.G ?? 0} />
+        </Stage>
+      )
+    case 'beacon':
+      return (
+        <Stage {...FRAMING.beacon}>
+          <BeaconModel
+            color={LED_COLORS[(data.color as LedColor) ?? 'orange'] ?? LED_COLORS.orange}
+            level={level}
+            burnt={!!data.burnt}
+          />
         </Stage>
       )
     case 'fan':

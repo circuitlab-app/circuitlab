@@ -132,7 +132,7 @@ const SENSE_WORDS: Partial<Record<PartType, [high: string, low: string]>> = {
 /** Sensors whose reading flips when they sit between IN and − instead of between + and IN. */
 const TWO_LEGGED_SENSORS = new Set<PartType>(['ldr', 'thermistor', 'switch', 'button', 'tilt', 'reed'])
 
-export const LIGHTS = new Set<PartType>(['led', 'lamp', 'rgbLed', 'trafficLight', 'barGraph', 'laser'])
+export const LIGHTS = new Set<PartType>(['led', 'lamp', 'rgbLed', 'trafficLight', 'barGraph', 'laser', 'beacon'])
 export const MOVERS = new Set<PartType>(['motor', 'fan', 'pump', 'vibration', 'servo', 'solenoid', 'electromagnet'])
 export const SOUNDERS = new Set<PartType>(['buzzer', 'speaker', 'bell'])
 
@@ -141,7 +141,7 @@ const lowerFirst = (s: string) => (/^[A-Z][a-z]/.test(s) ? s[0].toLowerCase() + 
 /** A part's everyday English name with its colour: "red LED", "warm lamp", "motor". */
 export function englishName(data: PartData): string {
   const name = lowerFirst(en.parts[data.type]?.name ?? data.type)
-  if ((data.type === 'led' || data.type === 'lamp') && data.color) {
+  if ((data.type === 'led' || data.type === 'lamp' || data.type === 'beacon') && data.color) {
     return `${en.colors[data.color as keyof typeof en.colors]?.toLowerCase() ?? data.color} ${name}`
   }
   return name
@@ -413,7 +413,7 @@ export function buildMessages(info: BoardInfo, history: HistoryTurn[], request: 
     'RULES',
     '1. Answer with JSON that has "pins" and "say".',
     '2. "pins" is a list of only the pins you change, each with one word from the list above. Leave the other pins out. Use [] when nothing should change, like for a question or something you cannot do.',
-    '3. Children use everyday words: "light" or "lamp" can mean any LED or lamp, "fan", "wheel" or "pump" a motor, "bell", "alarm" or "beeper" a buzzer. Pick the pin whose part matches what the child names.',
+    '3. Children use everyday words: "light" or "lamp" can mean any LED or lamp, "warning light" or "flashing light" a beacon, "fan", "wheel" or "pump" a motor, "bell", "alarm" or "beeper" a buzzer, "text", "message" or "SMS" an SMS module (it sends one text each time its pin turns on), "internet", "cloud" or "Wi-Fi" a Wi-Fi module. Pick the pin whose part matches what the child names.',
     '4. Only change pins that have a part connected. Never set a pin that has nothing connected.',
     '5. "Turn on" means on. Use follow, invert or alarm only when the child says when it should happen, like "when it gets dark" or "if someone comes".',
     `6. "say": one or two short, friendly sentences in ${language}, with easy words for a child. Say what will happen and name the part (like "the red light"), not the pin.`,

@@ -41,6 +41,7 @@ export const DEVICE_TYPES = [
   'gps',
   'canBus',
   'rs485',
+  'beacon',
 ] as const satisfies readonly PartType[]
 
 export type DeviceType = (typeof DEVICE_TYPES)[number]
@@ -349,6 +350,20 @@ const irLed = (ctx: DeviceContext) =>
     } else if (amps > 1e-3) {
       result.level = glow(amps)
       result.status = amps > E.led.overCurrent ? 'over' : amps < 5e-3 ? 'weak' : 'on'
+    }
+  })
+
+/** The warning beacon: LEDs behind a built-in resistor, so a board pin can light it fully. */
+const beacon = (ctx: DeviceContext) =>
+  lightDevice(ctx, E.beacon.forwardVoltage, E.beacon.seriesResistance, (amps, result) => {
+    const B = E.beacon
+    if (amps > B.burnCurrent) {
+      result.damaged = true
+      result.status = 'over'
+      result.level = 1.3
+    } else if (amps > 1e-3) {
+      result.level = glow(amps, B.fullCurrent)
+      result.status = amps > B.overCurrent ? 'over' : amps < B.weakCurrent ? 'weak' : 'on'
     }
   })
 
@@ -994,6 +1009,7 @@ const FACTORIES: Record<DeviceType, (ctx: DeviceContext) => Device> = {
   gps: radio,
   canBus: radio,
   rs485: radio,
+  beacon,
 }
 
 /** The device for a part, or null when the solver handles the part itself. */

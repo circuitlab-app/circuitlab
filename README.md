@@ -19,7 +19,7 @@ Circuit Lab is a circuit simulator for kids. Drag parts onto the board, wire the
 
 Circuit Lab is built in **English, Persian and Arabic** from the ground up, so a child in Tehran, Muscat or London gets the same app in their own words.
 
-- **Everything in all three:** the board, all 105 parts and their lessons, 144 example projects, 15 missions, the 69-tool workshop Toolbox and its quiz, and every tip and warning.
+- **Everything in all three:** the board, all 106 parts and their lessons, 184 example projects, 15 missions, the 69-tool workshop Toolbox and its quiz, and every tip and warning.
 - **Real right-to-left:** in Persian and Arabic the whole app mirrors, from the panels and menus to the sliders and arrow keys, while formulas like V = A × Ω still read correctly.
 - **A font made for each script,** and Persian digits where Persian children expect them.
 - **Search that understands you:** Arabic and Persian spellings of the same letter (ي / ی, ك / ک) find the same thing.
@@ -36,12 +36,12 @@ Circuit Lab is built in **English, Persian and Arabic** from the ground up, so a
 - **Switches and knobs:** switch, push button, stair switch, micro switch, dimmer, knob (potentiometer), joystick and relay.
 - **Electronic parts:** resistor (with a colour-code lesson), capacitor, diode, Zener diode, transistors, MOSFET, optocoupler, fuse and voltage regulator.
 - **Chips and logic:** NOT, AND, OR, XOR, NAND and NOR gates with a live truth table, a memory latch, a light-chaser counter, a comparator, a 555 blinker and a motor driver.
-- **Light, sound and motion:** lamp, LED, RGB LED, motor, vibration motor, buzzer (a beep or a real police siren), speaker, electric bell, electromagnet, solenoid, servo, laser, infrared LED, traffic light, LED bar graph, fan and a water pump with moving water.
+- **Light, sound and motion:** lamp, LED, RGB LED, motor, vibration motor, buzzer (a beep or a real police siren), speaker, electric bell, electromagnet, solenoid, servo, laser, infrared LED, traffic light, warning beacon, LED bar graph, fan and a water pump with moving water.
 - **Sensors:** light, temperature, tilt, magnet, distance, motion, sound, smoke, soil, touch, flame, rain, water level, humidity, obstacle, line, pressure, heartbeat and knock.
 - **Screens:** number displays, text and colour screens, LED matrices and LED walls of any size for shop signs and a city TV that plays your own photos and videos.
 - **Meters:** a multimeter, a logic probe, a voltmeter, an ammeter and an oscilloscope.
 - **Things that go wrong, safely:** too many volts burn a lamp, an LED without a resistor burns out, a wire straight across a battery makes a short circuit, and a fuse blows to protect the rest.
-- **144 example projects** on sixteen shelves, from a flashlight to a traffic light, a radar, a robot car, a talking smart home, a car alarm that texts its owner, a factory conveyor run by a PLC and a gas alarm at an oil well, with search and an easy / medium / hard filter.
+- **184 example projects** on sixteen shelves, among them 21 for cars, 21 for factories, 12 for oil and gas and 11 that you talk to, from a flashlight to a traffic light, a radar, a robot car, a talking smart home, a car alarm that texts its owner, a factory conveyor run by a PLC and a gas alarm at an oil well, with search and an easy / medium / hard filter.
 - **Lessons:** every part explains what it does in kid-friendly words, plus a "volts, amps and ohms" lesson that uses the live numbers from the board.
 - **Toolbox:** 69 real workshop tools, each with a drawing, how to use it, how to stay safe and a fun fact, plus a "Which tool?" quiz and a starter-kit checklist.
 - **Missions:** fifteen challenges, from "build a flashlight" to "blink an LED with the Arduino", with confetti when one is done.

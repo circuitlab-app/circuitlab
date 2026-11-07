@@ -1030,5 +1030,14 @@ export const enLearn: LearnBook = {
       like: 'It is like a tyre gauge that never stops checking, and tells a computer the answer all the time.',
       fact: 'Oil wells are watched all day by pressure sensors, because a sudden change in pressure can be the first sign of trouble deep underground.',
     },
+    beacon: {
+      about: [
+        'A warning beacon is a light with a mirror that turns around it, so its beam sweeps all the way round and can be seen from every side.',
+        'Its LEDs and their resistor are inside the dome, so you can join it straight to a board pin or to 5 V: + to + and − to −.',
+        'The colour tells people what is going on: amber means a slow vehicle or a machine at work, red means danger, blue means police or rescue, and green means all clear.',
+      ],
+      like: 'It is like a lighthouse that has shrunk to fit on a car roof.',
+      fact: 'In oil fields and chemical plants, a flashing beacon and a horn together warn workers to put on their breathing masks and walk away from a gas leak.',
+    },
   },
 }

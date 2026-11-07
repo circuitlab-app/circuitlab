@@ -1,6 +1,6 @@
-import { ELECTRICAL, RADIOS, isRadio } from '@/circuit/catalog'
+import { ELECTRICAL, LED_COLORS, RADIOS, isRadio } from '@/circuit/catalog'
 import type { PartResult, PartStatus } from '@/circuit/solver'
-import type { PartData, PartType } from '@/circuit/types'
+import type { LedColor, PartData, PartType } from '@/circuit/types'
 import type { Dictionary } from '@/i18n'
 
 /*
@@ -35,6 +35,7 @@ const LAB_CONTROLS = new Set<PartType>([
   'gps',
   'canBus',
   'rs485',
+  'beacon',
 ])
 
 export const hasLabControl = (type: PartType) => LAB_CONTROLS.has(type)
@@ -47,6 +48,8 @@ export function labGlow(data: PartData, result?: PartResult): string | null {
     case 'irLed':
       // only a camera sees it
       return data.camera ? '#c084fc' : null
+    case 'beacon':
+      return LED_COLORS[(data.color as LedColor) ?? 'orange'] ?? LED_COLORS.orange
     case 'trafficLight': {
       const c = result?.channels
       if (!c) return null
@@ -156,6 +159,10 @@ export function labTip(data: PartData, result: PartResult, status: PartStatus, t
       if (status === 'idle') return info(lab.meterOhms)
       return dial === 'beep' && result.channels?.beep === 1 ? info(lab.meterBeep) : null
     }
+    case 'beacon':
+      if (status === 'reverse') return warn(t.tips.ledReverse)
+      if (status === 'over') return warn(lab.beaconHot)
+      return status === 'idle' ? info(lab.beaconHint) : null
     case 'logicProbe':
       if (status === 'reverse') return warn(t.workshop.tips.chipReverse)
       if (status !== 'on') return info(lab.probePower)

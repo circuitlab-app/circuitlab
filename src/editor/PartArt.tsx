@@ -3779,6 +3779,91 @@ function TrafficLight({ id }: ArtProps) {
   )
 }
 
+/** The fine ribs moulded into a beacon's lens: closer together toward its edges, as round things look. */
+const BEACON_RIBS = Array.from({ length: 11 }, (_, i) => {
+  const a = ((i - 5) * 14 * Math.PI) / 180
+  const x = 24 + 9.2 * Math.sin(a)
+  return { x: round(x), top: round(16 - 5 * Math.cos(a)), bottom: round(29 + 2 * Math.cos(a)) }
+})
+
+function Beacon({ id }: ArtProps) {
+  return (
+    <>
+      <defs>
+        <linearGradient id={`${id}d`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#fed7aa" />
+          <stop offset="0.3" stopColor="#fb923c" />
+          <stop offset="0.75" stopColor="#ea580c" />
+          <stop offset="1" stopColor="#9a3412" />
+        </linearGradient>
+        <linearGradient id={`${id}b`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#52525b" />
+          <stop offset="0.45" stopColor="#27272a" />
+          <stop offset="1" stopColor="#0c0c0e" />
+        </linearGradient>
+        <linearGradient id={`${id}f`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#3f3f46" />
+          <stop offset="1" stopColor="#18181b" />
+        </linearGradient>
+        <linearGradient id={`${id}m`} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#fffbeb" />
+          <stop offset="0.6" stopColor="#e5e7eb" />
+          <stop offset="1" stopColor="#9ca3af" />
+        </linearGradient>
+        <linearGradient id={`${id}ray`} x1="1" y1="0" x2="0" y2="0">
+          <stop offset="0" stopColor="#fbbf24" stopOpacity="0.85" />
+          <stop offset="1" stopColor="#fbbf24" stopOpacity="0" />
+        </linearGradient>
+        <radialGradient id={`${id}glow`}>
+          <stop offset="0" stopColor="#fb923c" stopOpacity="0.5" />
+          <stop offset="1" stopColor="#fb923c" stopOpacity="0" />
+        </radialGradient>
+        <radialGradient id={`${id}lamp`}>
+          <stop offset="0" stopColor="#fff" />
+          <stop offset="0.45" stopColor="#fef3c7" />
+          <stop offset="1" stopColor="#fde68a" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <Shadow y={42.5} rx={17} />
+      {/* its red and black leads, out from under the flange */}
+      <path d="M16 36.5C12 37 7.5 37.4 4.5 38.6" fill="none" stroke="#dc2626" strokeWidth="1.2" strokeLinecap="round" />
+      <path d="M32 36.5C36 37 40.5 37.4 43.5 38.6" fill="none" stroke="#18181b" strokeWidth="1.2" strokeLinecap="round" />
+      <path d="M4.5 38.6l-1.4.6M43.5 38.6l1.4.6" stroke="#a1a1aa" strokeWidth="0.9" strokeLinecap="round" />
+      {/* the flange with its screws, and the base */}
+      <ellipse cx="24" cy="38.9" rx="14.6" ry="3.3" fill="#0c0c0e" />
+      <ellipse cx="24" cy="38" rx="14.6" ry="3.1" fill={`url(#${id}f)`} />
+      {[12.6, 35.4].map((x) => (
+        <g key={x}>
+          <circle cx={x} cy="38.5" r="0.95" fill="#d4d4d8" />
+          <path d={`M${x - 0.6} 38.5h1.2`} stroke="#52525b" strokeWidth="0.35" />
+        </g>
+      ))}
+      <path d="M14.2 30v7a9.8 2.4 0 0 0 19.6 0v-7z" fill={`url(#${id}b)`} />
+      <path d="M14.2 34.6a9.8 2.4 0 0 0 19.6 0" fill="none" stroke="#000" strokeWidth="0.4" opacity="0.5" />
+      <rect x="15.4" y="30.6" width="1.4" height="6.4" rx="0.7" fill="#fff" opacity="0.18" />
+      <ellipse cx="24" cy="29.8" rx="10.2" ry="2.2" fill="#0c0c0e" />
+      {/* the beam swinging out to the left, and the glow all round */}
+      <circle cx="24" cy="18.5" r="15" fill={`url(#${id}glow)`} />
+      <path d="M18 17.2 4.5 12.6v12.8l13.5-4.3z" fill={`url(#${id}ray)`} opacity="0.6" />
+      {/* the amber lens */}
+      <path d="M14.6 29.4 15.2 16.5C15.2 10.6 19 6.6 24 6.6s8.8 4 8.8 9.9l.6 12.9a9.4 2.1 0 0 1-18.8 0z" fill={`url(#${id}d)`} opacity="0.92" />
+      {/* inside: the post, the lamp and the mirror turning round it */}
+      <rect x="23.2" y="21" width="1.6" height="7.6" fill="#7c2d12" opacity="0.55" />
+      <path d="M25.6 13.6c4.2 1.4 4.2 9.4 0 10.8 1.6-2 1.6-8.8 0-10.8z" fill={`url(#${id}m)`} />
+      <path d="M25.6 13.6c4.2 1.4 4.2 9.4 0 10.8" fill="none" stroke="#6b7280" strokeWidth="0.35" />
+      <circle cx="23.4" cy="19" r="4.6" fill={`url(#${id}lamp)`} />
+      <rect x="22.4" y="16.6" width="2" height="4.8" rx="1" fill="#fff" />
+      {/* where the beam leaves the lens */}
+      <ellipse cx="16.9" cy="19" rx="2.4" ry="5" fill={`url(#${id}lamp)`} />
+      {BEACON_RIBS.map((r) => (
+        <path key={r.x} d={`M${r.x} ${r.top}V${r.bottom}`} stroke="#9a3412" strokeWidth="0.45" opacity="0.32" />
+      ))}
+      <path d="M15.2 16.5C15.2 10.6 19 6.6 24 6.6s8.8 4 8.8 9.9" fill="none" stroke="#fff7ed" strokeWidth="0.5" opacity="0.6" />
+      <path d="M17.6 26.5V15.6c0-2.8 1.2-5 3-6.4" fill="none" stroke="#fff" strokeWidth="1.4" strokeLinecap="round" opacity="0.55" />
+    </>
+  )
+}
+
 const FAN_BLADE = 'M5.63 -1.4A5.8 5.8 0 0 1 5.21 2.54Q8.25 6 8.99 11.5A14.6 14.6 0 0 0 14.28 3.04Q10.39 -0.36 5.63 -1.4Z'
 
 function Fan({ id }: ArtProps) {
@@ -4737,6 +4822,7 @@ const ART: Record<PartType, (p: ArtProps) => ReactNode> = {
   bell: Bell,
   barGraph: BarGraph,
   trafficLight: TrafficLight,
+  beacon: Beacon,
   fan: Fan,
   nandGate: NandGate,
   norGate: NorGate,

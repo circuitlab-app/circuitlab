@@ -196,6 +196,11 @@ export const ELECTRICAL = {
    * and use about 20 mA from 5 V; IN only listens, and the GPS drives its PPS pin like a chip
    */
   radio: { minVoltage: 3, supplyResistance: 250, inputResistance: 1e6, outputResistance: 100 },
+  /**
+   * rotating warning beacon: LEDs with their resistor built in, made for 5 V. A board pin
+   * lights it fully; above about 10 V it gets too hot
+   */
+  beacon: { forwardVoltage: 2, seriesResistance: 150, fullCurrent: 0.015, weakCurrent: 0.004, overCurrent: 0.055, burnCurrent: 0.12 },
 } as const
 
 /** AA packs of 1 to 4 cells, a 9 V block and a 12 V block */
@@ -443,6 +448,9 @@ export const LED_COLORS: Record<LedColor, string> = {
   pink: '#ff5fb8',
 }
 
+/** The colours a warning beacon comes in: amber for vehicles and machines, red for danger, blue for emergencies, green for all clear. */
+export const BEACON_COLORS = ['orange', 'red', 'blue', 'green'] as const satisfies readonly LedColor[]
+
 export const LAMP_COLORS: Record<LampColor, string> = {
   warm: '#ffd38a',
   yellow: '#fff06a',
@@ -515,6 +523,7 @@ export const PART_ORDER: PartType[] = [
   'laser',
   'rgbLed',
   'trafficLight',
+  'beacon',
   'barGraph',
   'motor',
   'fan',
@@ -767,6 +776,7 @@ export const PARTS: Record<PartType, PartDef> = {
   canBus: radio('canBus', '#ca8a04'),
   rs485: radio('rs485', '#4f46e5'),
   pressureSensor: { category: 'sensor', accent: '#475569', terminals: sensorModule, defaults: { sense: 0.35 } },
+  beacon: { category: 'output', accent: '#f59e0b', terminals: polarised, defaults: { color: 'orange' } },
   switch: { category: 'control', accent: '#6366f1', terminals: twoWay, defaults: { closed: false } },
   button: { category: 'control', accent: '#ec4899', terminals: twoWay, defaults: {} },
   dimmer: { category: 'control', accent: '#14b8a6', terminals: twoWay, defaults: { level: 0.7 } },

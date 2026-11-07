@@ -111,6 +111,8 @@ export type PartType =
   | 'rs485'
   // an industrial pressure sensor with its own dial, as on an oil well or an air line
   | 'pressureSensor'
+  // a rotating warning light, as on a tow truck, a factory machine or an oil well
+  | 'beacon'
 
 /** What a screen shows. Each kind of screen offers some of these (see `DISPLAY_MODES`). */
 export type DisplayMode =

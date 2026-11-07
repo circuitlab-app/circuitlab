@@ -393,6 +393,8 @@ export function LabControl({ id, data, result }: { id: string; data: PartData; r
       return <MeterControl id={id} data={data} result={result} />
     case 'logicProbe':
       return <ProbeRow channels={result?.channels} label={label} />
+    case 'beacon':
+      return <LevelRow fraction={level / 1.1} text={percent(level / 1.1)} label={t.inspector.brightness} icon={icon(RotateCw)} />
     case 'gsm':
     case 'wifi':
     case 'bluetooth':

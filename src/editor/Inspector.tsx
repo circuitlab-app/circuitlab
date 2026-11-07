@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import {
   BATTERY_VOLTAGES,
+  BEACON_COLORS,
   BOARDS,
   CAPACITOR_VALUES,
   FUSE_RATINGS,
@@ -310,6 +311,15 @@ function PartSettings({ node }: { node: SelectedPart }) {
         <Swatches
           value={(data.color as LedColor) ?? 'red'}
           colors={LED_COLORS}
+          labels={t.colors}
+          onChange={(color) => updatePart(id, { color })}
+        />
+      )
+    case 'beacon':
+      return (
+        <Swatches
+          value={(data.color as (typeof BEACON_COLORS)[number]) ?? 'orange'}
+          colors={Object.fromEntries(BEACON_COLORS.map((c) => [c, LED_COLORS[c]])) as Record<(typeof BEACON_COLORS)[number], string>}
           labels={t.colors}
           onChange={(color) => updatePart(id, { color })}
         />

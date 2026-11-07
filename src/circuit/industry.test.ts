@@ -29,6 +29,7 @@ const NEW_PARTS: PartType[] = [
   'canBus',
   'rs485',
   'pressureSensor',
+  'beacon',
 ]
 
 const part = (id: string, type: PartType, extra: Partial<PartData> = {}): NetPart => ({
@@ -264,6 +265,30 @@ describe('the message modules', () => {
     expect(at(steps, 2.2).parts.m.status).not.toBe('on')
     expect(at(steps, 3.5).parts.m.channels?.link).toBe(0)
     expect(at(steps, 4.3).parts.m.channels?.link).toBe(1)
+  })
+})
+
+describe('the warning beacon', () => {
+  const lit = (volts: number, reversed = false) => {
+    const parts = [part('bat', 'battery', { voltage: volts }), part('b', 'beacon')]
+    const wires = reversed ? join(['bat:a', 'b:b'], ['b:a', 'bat:b']) : join(['bat:a', 'b:a'], ['b:b', 'bat:b'])
+    return solveCircuit(parts, wires).parts.b
+  }
+
+  it('has its resistor inside: a board pin lights it fully without overloading the pin', () => {
+    const parts = [part('board', 'ecu', { pins: { OUT6: 'on' } }), part('b', 'beacon')]
+    const r = solveCircuit(parts, join(['board:OUT6', 'b:a'], ['b:b', 'board:GND']))
+    expect(r.parts.b.status).toBe('on')
+    expect(r.parts.b.level).toBeGreaterThan(0.9)
+    expect(r.parts.board.status).toBe('on')
+  })
+
+  it('works from 4.5 V or 9 V, gets too hot on 12 V, and stays dark the wrong way round', () => {
+    expect(lit(4.5).status).toBe('on')
+    expect(lit(9).status).toBe('on')
+    expect(lit(12).status).toBe('over')
+    expect(lit(1.5).level).toBe(0)
+    expect(lit(4.5, true).status).toBe('reverse')
   })
 })
 

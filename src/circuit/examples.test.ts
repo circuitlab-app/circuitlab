@@ -1438,6 +1438,417 @@ describe('connected: SMS, Wi-Fi, Bluetooth, LoRa and GPS', () => {
   })
 })
 
+describe('cars, second batch', () => {
+  it('hazard lights: both orange lights flash with the ticking relay; off when the switch is off', () => {
+    const { steps, last } = run('ecuHazard', 2)
+    for (const key of ['left', 'right', 'tick']) expect(pulses(steps, key), key).toBe(true)
+    expect(steps.every((r) => r.parts.left.level > 0 === r.parts.right.level > 0)).toBe(true)
+    expect(on(last, 'dash')).toBe(true)
+    const off = run('ecuHazard', 1, { sw: { closed: false } })
+    for (const key of ['left', 'right', 'tick', 'dash']) expect(off.steps.slice(2).every((r) => r.parts[key].level === 0), key).toBe(true)
+  })
+
+  it('brake lights: pressing the pedal lights all three, letting go puts them out', () => {
+    const braking = run('ecuBrakeLights').last
+    for (const key of ['left', 'third', 'right']) expect(on(braking, key), key).toBe(true)
+    const rolling = run('ecuBrakeLights', 0.5, { sensor: { sense: 0 } }).last
+    for (const key of ['left', 'third', 'right']) expect(rolling.parts[key].level, key).toBe(0)
+  })
+
+  it('seatbelt: buckled is green and quiet; unbuckled, the belt light and the chime go off', () => {
+    const buckled = run('ecuSeatbelt', 1)
+    expect(on(buckled.last, 'buckled')).toBe(true)
+    expect(buckled.steps.slice(2).every((r) => r.parts.chime.level === 0)).toBe(true)
+    const loose = run('ecuSeatbelt', 2, { buckle: { closed: false } })
+    expect(pulses(loose.steps, 'chime')).toBe(true)
+    expect(pulses(loose.steps, 'belt')).toBe(true)
+    expect(loose.last.parts.buckled.level).toBe(0)
+  })
+
+  it('interior light: on while the door is open, off once the magnet on the door is back', () => {
+    const open = run('ecuDomeLight').last
+    expect(on(open, 'dome')).toBe(true)
+    expect(on(open, 'open')).toBe(true)
+    const shut = run('ecuDomeLight', 0.5, { door: { sense: 1 } }).last
+    expect(shut.parts.dome.level).toBe(0)
+    expect(shut.parts.open.level).toBe(0)
+  })
+
+  it('fuel gauge: the bars show the tank; under half a tank the orange light comes on', () => {
+    const full = run('ecuFuelGauge').last
+    expect(full.parts.gauge.level).toBe(7)
+    expect(full.parts.low.level).toBe(0)
+    const low = run('ecuFuelGauge', 0.5, { sensor: { sense: 0.2 } }).last
+    expect(low.parts.gauge.level).toBe(2)
+    expect(on(low, 'low')).toBe(true)
+  })
+
+  it('battery light: a full 12 V battery is green; a flat 6 V one lights the red battery light', () => {
+    const full = run('ecuBattery').last
+    expect(full.parts.vm.level).toBeGreaterThan(11)
+    expect(on(full, 'ok')).toBe(true)
+    expect(full.parts.warn.level).toBe(0)
+    expect(full.parts.gauge.level).toBe(7)
+    const flat = run('ecuBattery', 0.5, { carBat: { voltage: 6 } }).last
+    expect(on(flat, 'warn')).toBe(true)
+    expect(flat.parts.ok.level).toBe(0)
+  })
+
+  it('horn: the steering-wheel button sounds the horn through the transistor', () => {
+    const quiet = run('ecuHorn').last
+    expect(quiet.parts.horn.level).toBe(0)
+    expect(on(quiet, 'ignition')).toBe(true)
+    expect(on(run('ecuHorn', 0.5, { wheel: { pressed: true } }).last, 'horn')).toBe(true)
+  })
+
+  it('lane assist: in the lane it is green; on the line the wheel shakes, it beeps and flashes', () => {
+    const lane = run('ecuLaneAssist', 1)
+    expect(on(lane.last, 'inLane')).toBe(true)
+    expect(lane.steps.every((r) => r.parts.wheel.level === 0)).toBe(true)
+    const drift = run('ecuLaneAssist', 2, { sensor: { sense: 1 } })
+    for (const key of ['wheel', 'beeper', 'warn']) expect(pulses(drift.steps, key), key).toBe(true)
+    expect(drift.last.parts.inLane.level).toBe(0)
+  })
+
+  it('climate control: a hot cabin turns on the air conditioning and a faster blower; a cold one the heater', () => {
+    const hot = run('ecuClimate').last
+    expect(on(hot, 'cool')).toBe(true)
+    expect(hot.parts.heat.level).toBe(0)
+    const warm = run('ecuClimate', 0.5, { sensor: { sense: 0.55 } }).last
+    expect(Math.abs(hot.parts.blower.level)).toBeGreaterThan(Math.abs(warm.parts.blower.level))
+    const cold = run('ecuClimate', 0.5, { sensor: { sense: 0.2 } }).last
+    expect(on(cold, 'heat')).toBe(true)
+    expect(cold.parts.cool.level).toBe(0)
+  })
+
+  it('crash: the airbag light, hazards, unlocked doors and one emergency text', () => {
+    const driving = run('ecuCrash', 3)
+    expect(on(driving.last, 'ready')).toBe(true)
+    expect(driving.last.parts.locks.level).toBe(0)
+    const crash = run('ecuCrash', 3, { sensor: { sense: 1 } }, driving)
+    expect(on(crash.last, 'locks')).toBe(true)
+    expect(on(crash.last, 'airbag')).toBe(true)
+    expect(pulses(after(crash, driving), 'hazardL')).toBe(true)
+    expect(sent(crash.last, 'sms')).toBe(1)
+  })
+
+  it('shift light: the bars climb with the revs and the blue light flashes near the top', () => {
+    const cruise = run('ecuShiftLight', 2)
+    expect(cruise.last.parts.revs.level).toBe(4)
+    expect(cruise.steps.every((r) => r.parts.shift.level === 0)).toBe(true)
+    const redline = run('ecuShiftLight', 2, { pedal: { level: 0.95 } })
+    expect(redline.last.parts.revs.level).toBeGreaterThanOrEqual(9)
+    expect(pulses(redline.steps, 'shift')).toBe(true)
+    expect(Math.abs(redline.last.parts.engine.level)).toBeGreaterThan(Math.abs(cruise.last.parts.engine.level))
+  })
+
+  it('EV battery cooling: the warmer the pack, the faster the coolant pump; red when it is hot', () => {
+    const mild = run('ecuEvCooling').last
+    expect(on(mild, 'ok')).toBe(true)
+    const hot = run('ecuEvCooling', 0.5, { sensor: { sense: 0.9 } }).last
+    expect(hot.parts.pump.level).toBeGreaterThan(mild.parts.pump.level)
+    expect(on(hot, 'hot')).toBe(true)
+    expect(hot.parts.ok.level).toBe(0)
+  })
+
+  it('demister: damp air starts the blower and the orange light; dry air stops them', () => {
+    const damp = run('ecuDefog').last
+    expect(damp.parts.blower.level).toBeGreaterThan(0)
+    expect(on(damp, 'demist')).toBe(true)
+    const dry = run('ecuDefog', 0.5, { sensor: { sense: 0.2 } }).last
+    expect(dry.parts.blower.level).toBe(0)
+    expect(dry.parts.demist.level).toBe(0)
+  })
+
+  it('child alert: movement in the locked car sounds the horn, flashes the lights, runs the fan and sends one text', () => {
+    const empty = run('ecuChildAlert', 3)
+    expect(on(empty.last, 'locked')).toBe(true)
+    expect(empty.steps.every((r) => r.parts.horn.level === 0)).toBe(true)
+    const child = run('ecuChildAlert', 3, { sensor: { sense: 1 } }, empty)
+    expect(pulses(after(child, empty), 'horn')).toBe(true)
+    expect(pulses(after(child, empty), 'lights')).toBe(true)
+    expect(on(child.last, 'fan')).toBe(true)
+    expect(sent(child.last, 'sms')).toBe(1)
+  })
+})
+
+describe('factories, second batch', () => {
+  it('batch counter: every box that passes moves the counter on by one', () => {
+    let r = run('plcCounter', 0.3)
+    expect(on(r.last, 'clear')).toBe(true)
+    expect(r.last.parts.count.level).toBe(0)
+    for (let box = 1; box <= 3; box++) {
+      r = run('plcCounter', 0.3, { sensor: { sense: 1 } }, r)
+      expect(on(r.last, 'box')).toBe(true)
+      r = run('plcCounter', 0.3, { sensor: { sense: 0 } }, r)
+      expect(r.last.parts.count.level, `box ${box}`).toBe(box)
+    }
+  })
+
+  it('bottling: the pump fills while a bottle is under the nozzle, and stops without one', () => {
+    const bottle = run('plcBottling').last
+    expect(on(bottle, 'filler')).toBe(true)
+    expect(on(bottle, 'filling')).toBe(true)
+    const none = run('plcBottling', 0.5, { sensor: { sense: 0 } }).last
+    expect(none.parts.filler.level).toBe(0)
+    expect(on(none, 'waiting')).toBe(true)
+  })
+
+  it('batch mixer: fill, then mix with the mixer turning, then drain, one second each', () => {
+    expect(at('plcMixer', 0.5).fill.status).toBe('on')
+    expect(at('plcMixer', 0.5).mixer.level).toBe(0)
+    expect(Math.abs(at('plcMixer', 1.5).mixer.level)).toBeGreaterThan(0.3)
+    expect(at('plcMixer', 1.5).mix.status).toBe('on')
+    expect(at('plcMixer', 2.5).drain.status).toBe('on')
+    expect(at('plcMixer', 2.5).mixer.level).toBe(0)
+  })
+
+  it('metal sorter: a metal part fires the pusher; the belt light stays on', () => {
+    const plain = run('plcSorter').last
+    expect(plain.parts.pusher.level).toBe(0)
+    expect(on(plain, 'running')).toBe(true)
+    const metal = run('plcSorter', 0.5, { sensor: { sense: 1 } }).last
+    expect(on(metal, 'pusher')).toBe(true)
+    expect(on(metal, 'metal')).toBe(true)
+  })
+
+  it('two-hand press: one hand is not enough; both buttons bring the press down', () => {
+    expect(on(run('plcTwoHand').last, 'ready')).toBe(true)
+    const one = run('plcTwoHand', 0.5, { left: { pressed: true } }).last
+    expect(one.parts.ram.level).toBe(0)
+    const both = run('plcTwoHand', 0.5, { left: { pressed: true }, right: { pressed: true } }).last
+    expect(on(both, 'ram')).toBe(true)
+    expect(on(both, 'pressing')).toBe(true)
+    expect(both.parts.ready.level).toBe(0)
+  })
+
+  it('magnet crane: the magnet holds while its switch is on, with the orange beacon turning', () => {
+    const lifting = run('plcCrane').last
+    expect(on(lifting, 'magnet')).toBe(true)
+    expect(on(lifting, 'warn')).toBe(true)
+    const off = run('plcCrane', 0.5, { lift: { closed: false } }).last
+    expect(off.parts.magnet.level).toBeLessThan(1e-3)
+    expect(off.parts.warn.level).toBe(0)
+  })
+
+  it('boiler: the heater glows until the water is hot, then the green light says it is ready', () => {
+    const cold = run('plcBoiler').last
+    expect(on(cold, 'heater')).toBe(true)
+    expect(on(cold, 'heating')).toBe(true)
+    const hot = run('plcBoiler', 0.5, { sensor: { sense: 0.8 } }).last
+    expect(hot.parts.heater.level).toBe(0)
+    expect(on(hot, 'ready')).toBe(true)
+  })
+
+  it('cold room: the compressor runs while it is warm and rests once it is cold', () => {
+    const warm = run('plcColdRoom').last
+    expect(Math.abs(warm.parts.compressor.level)).toBeGreaterThan(0.3)
+    expect(on(warm, 'cooling')).toBe(true)
+    const cold = run('plcColdRoom', 0.5, { sensor: { sense: 0.2 } }).last
+    expect(cold.parts.compressor.level).toBe(0)
+    expect(on(cold, 'cold')).toBe(true)
+  })
+
+  it('grain silo: the auger fills it, the bars rise, and it stops once the grain is near the top', () => {
+    const low = run('plcSilo').last
+    expect(Math.abs(low.parts.auger.level)).toBeGreaterThan(0.3)
+    expect(low.parts.level.level).toBe(3)
+    const full = run('plcSilo', 0.5, { sensor: { sense: 0.1 } }).last
+    expect(full.parts.auger.level).toBe(0)
+    expect(full.parts.level.level).toBe(9)
+    expect(on(full, 'full')).toBe(true)
+  })
+
+  it('bag scale: the feeder pours until the bag is heavy enough; the bars show the weight', () => {
+    const light = run('plcScale').last
+    expect(Math.abs(light.parts.feeder.level)).toBeGreaterThan(0.3)
+    expect(on(light, 'pouring')).toBe(true)
+    expect(light.parts.weight.level).toBe(3)
+    const heavy = run('plcScale', 0.5, { sensor: { sense: 0.8 } }).last
+    expect(heavy.parts.feeder.level).toBe(0)
+    expect(on(heavy, 'full')).toBe(true)
+  })
+
+  it('paint booth: more fumes run the extractor faster; too many sound the horn', () => {
+    const clean = run('plcPaintBooth', 1)
+    expect(on(clean.last, 'clean')).toBe(true)
+    expect(clean.steps.slice(2).every((r) => r.parts.horn.level === 0)).toBe(true)
+    const some = run('plcPaintBooth', 0.5, { sensor: { sense: 0.6 } }).last
+    const lots = run('plcPaintBooth', 2, { sensor: { sense: 0.95 } })
+    expect(lots.last.parts.extractor.level).toBeGreaterThan(some.parts.extractor.level)
+    expect(pulses(lots.steps, 'horn')).toBe(true)
+  })
+
+  it('robot arm: the arm swings back and forth, and the magnet grips only while a part is there', () => {
+    const { steps, last } = run('plcRobotArm', 2)
+    const swing = steps.map((r) => r.parts.arm.level)
+    expect(Math.max(...swing) - Math.min(...swing)).toBeGreaterThan(0.5)
+    expect(on(last, 'gripper')).toBe(true)
+    expect(run('plcRobotArm', 0.5, { sensor: { sense: 0 } }).last.parts.gripper.level).toBeLessThan(1e-3)
+  })
+
+  it('light curtain: the machine runs while the laser reaches the sensor; a hand in the beam stops it', () => {
+    const clear = run('plcLightCurtain').last
+    expect(Math.abs(clear.parts.machine.level)).toBeGreaterThan(0.3)
+    expect(clear.parts.beam.level).toBeGreaterThan(0)
+    expect(clear.parts.stop.level).toBe(0)
+    const hand = run('plcLightCurtain', 0.5, { ldr: { light: 0 } }).last
+    expect(hand.parts.machine.level).toBe(0)
+    expect(on(hand, 'stop')).toBe(true)
+    expect(on(hand, 'horn')).toBe(true)
+  })
+
+  it('forklift crossing: green for walkers; a forklift turns the blue beacon and shows them red', () => {
+    const quiet = run('plcForklift').last
+    expect(on(quiet, 'walk')).toBe(true)
+    expect(quiet.parts.beacon.level).toBe(0)
+    const forklift = run('plcForklift', 0.5, { sensor: { sense: 1 } }).last
+    expect(on(forklift, 'beacon')).toBe(true)
+    expect(on(forklift, 'stop')).toBe(true)
+    expect(forklift.parts.walk.level).toBe(0)
+  })
+})
+
+describe('oil and gas, second batch', () => {
+  it('solar site: the sun powers the sensor and the LoRa radio; at night they go quiet', () => {
+    const day = run('rtuSolarSite', 2).last
+    expect(day.parts.radio.status).toBe('on')
+    expect(sent(day, 'radio')).toBeGreaterThan(0)
+    expect(day.parts.radio.channels?.value).toBeCloseTo(0.35, 1)
+    expect(day.parts.vm.level).toBeGreaterThan(4)
+    const night = run('rtuSolarSite', 1, { sun: { light: 0 } }).last
+    expect(night.parts.radio.status).not.toBe('on')
+  })
+
+  it('separator: the dump valve opens when the water rises and closes again when it is low', () => {
+    const low = run('rtuSeparator').last
+    expect(low.parts.valve.level).toBe(0)
+    expect(on(low, 'ok')).toBe(true)
+    expect(low.parts.level.level).toBe(3)
+    const high = run('rtuSeparator', 0.5, { sensor: { sense: 0.8 } }).last
+    expect(on(high, 'valve')).toBe(true)
+    expect(on(high, 'dumping')).toBe(true)
+    expect(high.parts.level.level).toBe(8)
+  })
+
+  it('choke: the valve closes further as the pressure rises; very high pressure sounds the horn', () => {
+    const normal = run('rtuChoke', 1)
+    const high = run('rtuChoke', 2, { sensor: { sense: 0.85 } })
+    expect(high.last.parts.choke.level).toBeLessThan(normal.last.parts.choke.level)
+    expect(normal.steps.slice(2).every((r) => r.parts.horn.level === 0)).toBe(true)
+    expect(pulses(high.steps, 'horn')).toBe(true)
+  })
+
+  it('submersible pump: it runs while its motor is cool and trips when it gets too hot; LoRa reports it', () => {
+    const cool = run('rtuEsp').last
+    expect(on(cool, 'pump')).toBe(true)
+    expect(on(cool, 'running')).toBe(true)
+    expect(sent(cool, 'radio')).toBeGreaterThan(0)
+    const hot = run('rtuEsp', 0.5, { sensor: { sense: 0.85 } }).last
+    expect(hot.parts.pump.level).toBe(0)
+    expect(on(hot, 'trip')).toBe(true)
+  })
+
+  it('deluge: a fire turns the red beacon, wails the horn and starts the fire-water pump', () => {
+    const calm = run('rtuDeluge', 1).last
+    expect(on(calm, 'safe')).toBe(true)
+    expect(calm.parts.deluge.level).toBe(0)
+    expect(calm.parts.beacon.level).toBe(0)
+    const fire = run('rtuDeluge', 2, { sensor: { sense: 0.9 } })
+    expect(on(fire.last, 'deluge')).toBe(true)
+    expect(on(fire.last, 'beacon')).toBe(true)
+    expect(pulses(fire.steps, 'horn')).toBe(true)
+  })
+
+  it('pigging: when the pig’s magnet arrives, the beacon turns and one text goes out', () => {
+    const waiting = run('rtuPigging', 3)
+    expect(on(waiting.last, 'waiting')).toBe(true)
+    expect(waiting.last.parts.beacon.level).toBe(0)
+    const arrived = run('rtuPigging', 3, { sensor: { sense: 1 } }, waiting)
+    expect(on(arrived.last, 'beacon')).toBe(true)
+    expect(sent(arrived.last, 'sms')).toBe(1)
+  })
+})
+
+describe('talk to the AI board, second batch', () => {
+  it('AI car lights: headlights in the dark; asked for hazards, both orange lights blink together', () => {
+    const night = run('aiCarLights').last
+    expect(on(night, 'head')).toBe(true)
+    expect(run('aiCarLights', 0.5, { ldr: { light: 1 } }).last.parts.head.level).toBeLessThan(night.parts.head.level)
+    // "turn on the hazard lights"
+    const hazards = run('aiCarLights', 2, { board: aiPins({ P1: 'invert', P2: 'blink', P3: 'blink' }) })
+    expect(pulses(hazards.steps, 'left')).toBe(true)
+    expect(hazards.steps.every((r) => r.parts.left.level > 0 === r.parts.right.level > 0)).toBe(true)
+  })
+
+  it('AI factory line: the belt runs; taught, it stops for a box and shows red', () => {
+    const empty = run('aiFactoryLine').last
+    expect(Math.abs(empty.parts.belt.level)).toBeGreaterThan(0.3)
+    expect(on(empty, 'running')).toBe(true)
+    // "stop the belt when a box comes, and show red"
+    const taught = aiPins({ P1: 'invert', P2: 'invert', P3: 'follow' })
+    const box = run('aiFactoryLine', 0.5, { board: taught, sensor: { sense: 1 } }).last
+    expect(box.parts.belt.level).toBe(0)
+    expect(on(box, 'box')).toBe(true)
+  })
+
+  it('AI well guard: green while clean; taught, gas turns the beacon, wails the horn and sends a text', () => {
+    const clean = run('aiWellGuard', 3)
+    expect(on(clean.last, 'safe')).toBe(true)
+    expect(clean.last.parts.beacon.level).toBe(0)
+    // "warn me and text me when there is gas"
+    const taught = aiPins({ P1: 'invert', P2: 'follow', P3: 'alarm', P4: 'follow' })
+    const gas = run('aiWellGuard', 3, { board: taught, sensor: { sense: 0.8 } }, clean)
+    expect(on(gas.last, 'beacon')).toBe(true)
+    expect(pulses(after(gas, clean), 'horn')).toBe(true)
+    expect(sent(gas.last, 'sms')).toBe(1)
+  })
+
+  it('AI weather station: blue when cold; taught, it sends the temperature to the cloud', () => {
+    const start = run('aiWeatherCloud', 2).last
+    expect(on(start, 'cold')).toBe(true)
+    expect(start.parts.wifi.channels?.value).toBe(0)
+    // "send the temperature to the cloud"
+    const sending = run('aiWeatherCloud', 2, { board: aiPins({ P1: 'follow', P2: 'follow', P3: 'invert' }) }).last
+    expect(sending.parts.wifi.channels?.value).toBeCloseTo(0.25, 1)
+    expect(on(run('aiWeatherCloud', 0.5, { sensor: { sense: 0.8 } }).last, 'hot')).toBe(true)
+  })
+
+  it('AI night guard: the blue light keeps watch; taught, movement turns on the floodlight', () => {
+    const { steps } = run('aiNightGuard', 2)
+    expect(pulses(steps, 'watch')).toBe(true)
+    expect(steps.every((r) => r.parts.flood.level === 0)).toBe(true)
+    // "turn on the big light when someone moves"
+    const taught = aiPins({ P1: 'blink', P2: 'follow' })
+    expect(on(run('aiNightGuard', 0.5, { board: taught, sensor: { sense: 1 } }).last, 'flood')).toBe(true)
+    expect(run('aiNightGuard', 0.5, { board: taught }).last.parts.flood.level).toBe(0)
+  })
+
+  it('AI mood lamp: red breathes while green and blue take turns; asked for purple, red and blue shine', () => {
+    const red = (t: number) => at('aiMoodLamp', t).lamp.channels?.R ?? 0
+    expect(red(1)).toBeGreaterThan(red(0.05))
+    // "make it purple"
+    const purple = run('aiMoodLamp', 0.5, { board: aiPins({ P1: 'on', P3: 'on' }) }).last.parts.lamp.channels!
+    expect(purple.R).toBeGreaterThan(0.5)
+    expect(purple.B).toBeGreaterThan(0.5)
+    expect(purple.G).toBe(0)
+  })
+
+  it('shows the model the beacon, the SMS module and the RGB LED on their pins', () => {
+    const info = (id: PresetId) => {
+      const { nodes, edges } = buildPreset(id)
+      const board = nodes.find((n) => n.data.type === 'aiBoard')!
+      return describeBoard(board.id, nodes, edges)!
+    }
+    const guard = info('aiWellGuard')
+    const drives = (pin: string) => guard.pins.find((p) => p.pin === pin)!.devices.map((d) => d.type)
+    expect(drives('P2')).toEqual(['beacon'])
+    expect(drives('P4')).toEqual(['gsm'])
+    expect(guard.input?.sensor?.type).toBe('gasSensor')
+    expect(info('aiMoodLamp').pins[0].devices[0].type).toBe('rgbLed')
+  })
+})
+
 describe('every example has its own behaviour check', () => {
   it('names each new example in a test above', () => {
     for (const id of NEW_EXAMPLES) expect(thisFile.includes(`'${id}'`), id).toBe(true)
