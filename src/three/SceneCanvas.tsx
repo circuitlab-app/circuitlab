@@ -59,6 +59,8 @@ function hasAmbientMotion(nodes: PartNode[], result: SimResult) {
         return r.status === 'over' // smoke
       case 'flameSensor':
         return (data.sense ?? 0) > 0.02 // a flickering flame
+      case 'heater':
+        return r.level > 0 // the coil's glow shimmers
       case 'beacon':
         return r.level > 0 || r.status === 'over' // the turning reflector, smoke
       case 'rainSensor':

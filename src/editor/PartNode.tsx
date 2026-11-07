@@ -375,7 +375,7 @@ function PinChip({
   )
 }
 
-/** A board's six output pins: tap one to change its program. */
+/** A board's output pins: tap one to change its program. */
 function BoardPins({
   id,
   type,
@@ -403,7 +403,9 @@ function BoardPins({
     <div
       role="group"
       aria-label={t.inspector.program}
-      className={cn('nodrag node-track grid grid-cols-6 gap-0.5 p-0.5', className)}
+      className={cn('nodrag node-track grid gap-0.5 p-0.5', className)}
+      // one chip per pin: six on most boards, four on the ATtiny85
+      style={{ gridTemplateColumns: `repeat(${spec.pins.length}, minmax(0, 1fr))` }}
       dir="ltr"
     >
       {spec.pins.map((pin) => (
@@ -659,6 +661,10 @@ function NodeControl({ id, data, result }: { id: string; data: PartData; result?
     case 'ecu':
     case 'plc':
     case 'rtu':
+    case 'atmega328':
+    case 'atmega32':
+    case 'attiny85':
+    case 'stm32':
       return <BoardPins id={id} type={data.type} pins={data.pins ?? {}} levels={result?.pins} />
     case 'aiBoard':
       // the pins as on every board, and a button to talk to it

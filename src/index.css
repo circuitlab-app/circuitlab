@@ -199,6 +199,19 @@ html[lang='ar'] {
     0 14px 36px -12px oklch(0 0 0 / 0.7);
 }
 
+/*
+ * A dialog opens with a 3D tilt and a blur, and its last frame (perspective,
+ * no tilt, no blur) looks just like no transform at all. Left in place, it
+ * keeps the dialog a 3D layer on half pixels, so its text shimmers and jumps
+ * while it scrolls. Once the opening is over (useSettledModal) it lies flat;
+ * when it closes, the exit animation takes over again.
+ */
+[data-slot='dialog-content'][data-settled][data-state='open'],
+[data-slot='alert-dialog-content'][data-settled][data-state='open'] {
+  transform: none !important;
+  filter: none !important;
+}
+
 .board {
   background:
     radial-gradient(ellipse 80% 60% at 50% 0%, color-mix(in oklch, var(--primary) 6%, transparent), transparent 70%),

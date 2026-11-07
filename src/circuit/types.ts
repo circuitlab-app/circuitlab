@@ -101,6 +101,11 @@ export type PartType =
   | 'ecu'
   | 'plc'
   | 'rtu'
+  // bare microcontroller chips on small boards: three AVRs and an STM32 "Blue Pill"
+  | 'atmega328'
+  | 'atmega32'
+  | 'attiny85'
+  | 'stm32'
   // modules that send messages: by SMS, Wi-Fi, Bluetooth and LoRa, a GPS, and the wired CAN and RS-485 buses
   | 'gsm'
   | 'wifi'
@@ -113,6 +118,8 @@ export type PartType =
   | 'pressureSensor'
   // a rotating warning light, as on a tow truck, a factory machine or an oil well
   | 'beacon'
+  // a heating element: the glowing coil inside a toaster, an iron, an oven or a kettle
+  | 'heater'
 
 /** What a screen shows. Each kind of screen offers some of these (see `DISPLAY_MODES`). */
 export type DisplayMode =

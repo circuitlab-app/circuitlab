@@ -154,6 +154,37 @@ export type PresetId =
   | 'aiWeatherCloud'
   | 'aiNightGuard'
   | 'aiMoodLamp'
+  // AVR chips and the STM32
+  | 'avrBlink'
+  | 'tinyCandle'
+  | 'mega32Chaser'
+  | 'stm32Dimmer'
+  // home appliances: how they work inside
+  | 'appWasher'
+  | 'appFridge'
+  | 'appMicrowave'
+  | 'appKettle'
+  | 'appCooler'
+  | 'appCeilingFan'
+  | 'appWaterTank'
+  | 'appGarageDoor'
+  | 'appAirCon'
+  | 'appKitchenHood'
+  | 'appVacuum'
+  | 'appRobotVacuum'
+  | 'appJuicer'
+  | 'appMixer'
+  | 'appToaster'
+  | 'appIron'
+  | 'appOven'
+  | 'appHeater'
+  | 'appSamovar'
+  | 'appCoffee'
+  | 'appDishwasher'
+  | 'appHumidifier'
+  | 'appAirPurifier'
+  | 'appDeskFan'
+  | 'appSewing'
   // cars: the engine computer (ECU) and the car's own networks
   | 'ecuCooling'
   | 'ecuHeadlights'
@@ -537,20 +568,22 @@ function sensorFor(board: string, type: BoardType, sensor: PartType, data?: Part
  *   board ─────────────────────────────┘ (a pin switches a load too big for it, from its own battery)
  */
 const DRIVER = { x: 330, y: -250 }
+/** a second driver, above the first one: appliances often switch two big loads */
+const DRIVER_2 = { x: 330, y: -850 }
 
 /**
  * A load too big for a board pin (a fan, a pump, a motor, a valve), switched by a
  * transistor from its own battery. Its − joins `ground`, so the board and the
  * battery share one ground.
  */
-function driver(from: string, load: Piece, ground: string, volts = 4.5, ohms = 1000): Preset {
+function driver(from: string, load: Piece, ground: string, volts = 4.5, ohms = 1000, at = DRIVER): Preset {
   const k = load.key
   return {
     parts: [
-      { key: `${k}R`, type: 'resistor', ...DRIVER, data: { resistance: ohms } },
-      { key: `${k}Q`, type: 'transistor', x: DRIVER.x + 290, y: DRIVER.y },
-      { ...load, x: DRIVER.x + 540, y: DRIVER.y - 270, rotation: 90 },
-      { key: `${k}Bat`, type: 'battery', x: DRIVER.x + 780, y: DRIVER.y - 270, rotation: 270, data: { voltage: volts } },
+      { key: `${k}R`, type: 'resistor', ...at, data: { resistance: ohms } },
+      { key: `${k}Q`, type: 'transistor', x: at.x + 290, y: at.y },
+      { ...load, x: at.x + 540, y: at.y - 270, rotation: 90 },
+      { key: `${k}Bat`, type: 'battery', x: at.x + 780, y: at.y - 270, rotation: 270, data: { voltage: volts } },
     ],
     wires: [
       [from, `${k}R:a`, 'blue'],
@@ -3572,6 +3605,397 @@ const PRESETS: Record<PresetId, Preset> = {
       ['lamp:K', 'board:GND', 'black'],
     ],
   },
+
+  // ── AVR chips and the STM32 ──
+
+  // the "hello world" of every chip, written straight into its registers: PB5 blinks, PB1 fades with Timer1
+  avrBlink: join(
+    boardAt('atmega328', { PB1: 'fade', PB5: 'blink' }),
+    outputs('board', [
+      { key: 'blink', pin: 'PB5', type: 'led', color: 'red', ohms: 220, wire: 'white' },
+      { key: 'fade', pin: 'PB1', type: 'led', color: 'blue', ohms: 100, wire: 'blue' },
+    ]),
+  ),
+  // three lights on an 8-pin chip flicker like a candle flame
+  tinyCandle: join(
+    boardAt('attiny85', { PB0: 'blink2', PB1: 'blink', PB4: 'fade' }),
+    outputs('board', [
+      { key: 'glow', pin: 'PB4', type: 'led', color: 'orange', ohms: 220, wire: 'yellow' },
+      { key: 'flick1', pin: 'PB1', type: 'led', color: 'yellow', ohms: 220, wire: 'yellow' },
+      { key: 'flick2', pin: 'PB0', type: 'led', color: 'yellow', ohms: 220, wire: 'yellow' },
+    ]),
+  ),
+  // six lights run along the ATmega32's ports B and D, three steps over and over
+  mega32Chaser: join(
+    boardAt('atmega32', { PB0: 'step1', PB1: 'step2', PB2: 'step3', PB3: 'step1', PD4: 'step2', PD5: 'step3' }),
+    outputs('board', [
+      { key: 'l6', pin: 'PD5', type: 'led', color: 'green', ohms: 220, wire: 'green' },
+      { key: 'l5', pin: 'PD4', type: 'led', color: 'yellow', ohms: 220, wire: 'yellow' },
+      { key: 'l4', pin: 'PB3', type: 'led', color: 'red', ohms: 220, wire: 'white' },
+      { key: 'l3', pin: 'PB2', type: 'led', color: 'green', ohms: 220, wire: 'green' },
+      { key: 'l2', pin: 'PB1', type: 'led', color: 'yellow', ohms: 220, wire: 'yellow' },
+      { key: 'l1', pin: 'PB0', type: 'led', color: 'red', ohms: 220, wire: 'white' },
+    ]),
+  ),
+  // turn the knob: the STM32's 12-bit converter reads it, PWM sets the red light and the bars
+  stm32Dimmer: join(
+    {
+      parts: [
+        { key: 'board', type: 'stm32', x: 0, y: 0, data: program('stm32', { PA8: 'follow', PA9: 'invert', PB6: 'follow' }) },
+        { key: 'knob', type: 'potentiometer', ...SENSOR_SPOT, data: { level: 0.7, resistance: 10000 } },
+      ],
+      wires: [
+        ['board:3V3', 'knob:A', 'red'],
+        ['knob:B', 'board:GND', 'black'],
+        ['knob:W', 'board:PA0', 'yellow'],
+      ],
+    },
+    above('stm32', { key: 'bars', type: 'barGraph' }, 'board:PB6'),
+    outputs('board', [
+      { key: 'dim', pin: 'PA9', type: 'led', color: 'yellow', ohms: 47, wire: 'yellow' },
+      { key: 'bright', pin: 'PA8', type: 'led', color: 'red', ohms: 47, wire: 'white' },
+    ], 'knob:B'),
+  ),
+
+  // ── home appliances: how they work inside ──
+
+  // fill (blue), wash (the drum turns), drain (the pump empties it), round and round; the door stays locked
+  appWasher: join(
+    boardAt('atmega32', { PB0: 'step2', PB1: 'step3', PB2: 'on', PB3: 'step1', PD4: 'step2', PD5: 'step3' }),
+    driver('board:PB0', { key: 'drum', type: 'motor' }, 'lock:b', 3),
+    driver('board:PB1', { key: 'drain', type: 'pump' }, 'lock:b', 4.5, 1000, DRIVER_2),
+    outputs('board', [
+      { key: 'draining', pin: 'PD5', type: 'led', color: 'orange', ohms: 220, wire: 'yellow' },
+      { key: 'washing', pin: 'PD4', type: 'led', color: 'green', ohms: 220, wire: 'green' },
+      { key: 'filling', pin: 'PB3', type: 'led', color: 'blue', ohms: 100, wire: 'blue' },
+      { key: 'lock', pin: 'PB2', type: 'led', color: 'red', ohms: 220, wire: 'white' },
+    ]),
+  ),
+  // a real thermostat: the comparator checks the thermistor against the knob, and the AVR runs the compressor
+  appFridge: join(
+    {
+      parts: [
+        { key: 'board', type: 'atmega328', x: 0, y: 0, data: program('atmega328', { PB1: 'follow', PB4: 'invert', PB5: 'follow' }) },
+        { key: 'probe', type: 'thermistor', x: -660, y: -230, rotation: 90, data: { sense: 0.2 } },
+        { key: 'fixed', type: 'resistor', x: -660, y: 30, rotation: 90, data: { resistance: 10000 } },
+        { key: 'knob', type: 'potentiometer', x: -660, y: 290, data: { level: 0.3, resistance: 10000 } },
+        { key: 'cmp', type: 'comparator', ...SENSOR_SPOT },
+      ],
+      wires: [
+        ['board:5V', 'probe:a', 'red'],
+        ['probe:b', 'fixed:a', 'yellow'],
+        ['fixed:b', 'board:GND', 'black'],
+        ['probe:b', 'cmp:P', 'yellow'],
+        ['board:5V', 'knob:A', 'red'],
+        ['knob:B', 'board:GND', 'black'],
+        ['knob:W', 'cmp:N', 'blue'],
+        ['board:5V', 'cmp:VCC', 'red'],
+        ['cmp:GND', 'board:GND', 'black'],
+        ['cmp:OUT', 'board:PC0', 'yellow'],
+      ],
+    },
+    driver('board:PB1', { key: 'compressor', type: 'motor' }, 'cold:b', 3),
+    outputs('board', [
+      { key: 'cooling', pin: 'PB5', type: 'led', color: 'blue', ohms: 100, wire: 'blue' },
+      { key: 'cold', pin: 'PB4', type: 'led', color: 'green', ohms: 220, wire: 'green' },
+    ], 'cmp:GND'),
+  ),
+  // the door switch is the safety lock: shut, the magnetron (the lamp) and the turntable run; open, everything stops
+  appMicrowave: join(
+    {
+      parts: [
+        { key: 'board', type: 'attiny85', x: 0, y: 0, data: program('attiny85', { PB0: 'follow', PB1: 'follow', PB2: 'follow', PB4: 'invert' }) },
+        { key: 'door', type: 'slideSwitch', x: -330, y: -230, rotation: 90, data: { closed: true } },
+        { key: 'pull', type: 'resistor', x: -330, y: 30, rotation: 90, data: { resistance: 1000 } },
+      ],
+      wires: [
+        ['board:5V', 'door:COM', 'red'],
+        ['door:B', 'board:PB3', 'yellow'],
+        ['door:B', 'pull:a', 'yellow'],
+        ['pull:b', 'board:GND', 'black'],
+      ],
+    },
+    driver('board:PB0', { key: 'magnetron', type: 'lamp' }, 'pull:b', 3),
+    driver('board:PB1', { key: 'turntable', type: 'motor' }, 'pull:b', 3, 1000, DRIVER_2),
+    outputs('board', [
+      { key: 'open', pin: 'PB4', type: 'led', color: 'red', ohms: 220, wire: 'white' },
+      { key: 'inside', pin: 'PB2', type: 'led', color: 'white', ohms: 100, wire: 'white' },
+    ], 'pull:b'),
+  ),
+  // the heater (the lamp) warms the water until it is hot, then switches off and the kettle beeps
+  appKettle: join(
+    boardAt('attiny85', { PB1: 'alarm', PB2: 'invert', PB4: 'invert' }),
+    sensorFor('board', 'attiny85', 'tempSensor', { sense: 0.3 }),
+    driver('board:PB2', { key: 'heater', type: 'heater' }, 'heating:b'),
+    outputs('board', [
+      { key: 'heating', pin: 'PB4', type: 'led', color: 'orange', ohms: 220, wire: 'yellow' },
+      { key: 'beeper', pin: 'PB1', type: 'buzzer', ohms: 100, wire: 'white' },
+    ], 'sensor:GND'),
+  ),
+  // an evaporative cooler: the hotter it is, the faster the fan, and the pump keeps the pads wet
+  appCooler: join(
+    boardAt('atmega328', { PB0: 'follow', PB1: 'follow', PB4: 'invert', PB5: 'follow' }),
+    sensorFor('board', 'atmega328', 'tempSensor', { sense: 0.7 }),
+    driver('board:PB1', { key: 'fan', type: 'fan' }, 'cool:b', 6, 4700),
+    driver('board:PB0', { key: 'pads', type: 'pump' }, 'cool:b', 4.5, 1000, DRIVER_2),
+    outputs('board', [
+      { key: 'cool', pin: 'PB5', type: 'led', color: 'blue', ohms: 100, wire: 'blue' },
+      { key: 'fresh', pin: 'PB4', type: 'led', color: 'green', ohms: 220, wire: 'green' },
+    ], 'sensor:GND'),
+  ),
+  // the wall knob sets the fan's speed: the chip reads it and turns it into PWM
+  appCeilingFan: join(
+    {
+      parts: [
+        { key: 'board', type: 'attiny85', x: 0, y: 0, data: program('attiny85', { PB0: 'follow', PB1: 'follow', PB4: 'on' }) },
+        { key: 'knob', type: 'potentiometer', ...SENSOR_SPOT, data: { level: 0.6, resistance: 10000 } },
+      ],
+      wires: [
+        ['board:5V', 'knob:A', 'red'],
+        ['knob:B', 'board:GND', 'black'],
+        ['knob:W', 'board:PB3', 'yellow'],
+      ],
+    },
+    driver('board:PB0', { key: 'fan', type: 'fan' }, 'power:b', 6, 4700),
+    outputs('board', [
+      { key: 'power', pin: 'PB4', type: 'led', color: 'green', ohms: 220, wire: 'green' },
+      { key: 'speed', pin: 'PB1', type: 'led', color: 'white', ohms: 100, wire: 'white' },
+    ], 'knob:B'),
+  ),
+  // the tank on the roof: the pump fills it from the street pipe until the float reads full
+  appWaterTank: join(
+    boardAt('atmega328', { PB0: 'invert', PB1: 'follow', PB4: 'invert', PB5: 'follow' }),
+    above('atmega328', { key: 'level', type: 'barGraph' }, 'board:PB1'),
+    sensorFor('board', 'atmega328', 'waterSensor', { sense: 0.2 }),
+    driver('board:PB0', { key: 'pump', type: 'pump' }, 'full:b'),
+    outputs('board', [
+      { key: 'full', pin: 'PB5', type: 'led', color: 'blue', ohms: 100, wire: 'blue' },
+      { key: 'filling', pin: 'PB4', type: 'led', color: 'yellow', ohms: 220, wire: 'yellow' },
+    ], 'sensor:GND'),
+  ),
+  // the switch opens the garage door (the servo); the orange beacon flashes while it stands open
+  appGarageDoor: join(
+    boardAt('atmega32', { PB0: 'invert', PB1: 'follow', PB2: 'alarm', PD5: 'follow' }),
+    pulledDown('atmega32', { key: 'remote', type: 'switch', data: { closed: true } }),
+    above('atmega32', { key: 'door', type: 'servo' }),
+    { parts: [], wires: [['board:PD5', 'door:OUT', 'blue']] },
+    outputs('board', [
+      { key: 'beacon', pin: 'PB2', type: 'beacon', color: 'orange', ohms: 0, wire: 'yellow' },
+      { key: 'open', pin: 'PB1', type: 'led', color: 'green', ohms: 220, wire: 'green' },
+      { key: 'shut', pin: 'PB0', type: 'led', color: 'red', ohms: 220, wire: 'white' },
+    ], 'pull:b'),
+  ),
+  // a split air conditioner: the compressor and the indoor fan follow the room's heat, and the phone sees it over Wi-Fi
+  appAirCon: join(
+    boardAt('stm32', { PA8: 'follow', PA9: 'follow', PB6: 'follow', PB12: 'invert', PB13: 'follow' }),
+    above('stm32', { key: 'wifi', type: 'wifi' }, 'board:PA8'),
+    sensorFor('board', 'stm32', 'tempSensor', { sense: 0.7 }),
+    driver('board:PA9', { key: 'blower', type: 'fan' }, 'comfy:b', 6, 2200),
+    driver('board:PB6', { key: 'compressor', type: 'motor' }, 'comfy:b', 3, 1000, DRIVER_2),
+    outputs('board', [
+      { key: 'cooling', pin: 'PB13', type: 'led', color: 'red', ohms: 47, wire: 'white' },
+      { key: 'comfy', pin: 'PB12', type: 'led', color: 'green', ohms: 47, wire: 'green' },
+    ], 'sensor:GND'),
+  ),
+  // smoke and steam from the stove: the more there is, the faster the hood's fan pulls it out
+  appKitchenHood: join(
+    boardAt('stm32', { PA9: 'follow', PB12: 'follow', PB13: 'on' }),
+    sensorFor('board', 'stm32', 'gasSensor', { sense: 0.6 }),
+    driver('board:PA9', { key: 'hood', type: 'fan' }, 'light:b', 6, 2200),
+    outputs('board', [
+      { key: 'light', pin: 'PB13', type: 'led', color: 'yellow', ohms: 47, wire: 'yellow' },
+      { key: 'smoke', pin: 'PB12', type: 'led', color: 'orange', ohms: 47, wire: 'yellow' },
+    ], 'sensor:GND'),
+  ),
+
+  // ── home appliances, second batch ──
+
+  // the knob sets the suction: the stronger the motor spins its fan, the harder it pulls the dust in
+  appVacuum: join(
+    {
+      parts: [
+        { key: 'board', type: 'atmega328', x: 0, y: 0, data: program('atmega328', { PB1: 'follow', PB2: 'follow', PB5: 'on' }) },
+        { key: 'knob', type: 'potentiometer', ...SENSOR_SPOT, data: { level: 0.7, resistance: 10000 } },
+      ],
+      wires: [
+        ['board:5V', 'knob:A', 'red'],
+        ['knob:B', 'board:GND', 'black'],
+        ['knob:W', 'board:PC0', 'yellow'],
+      ],
+    },
+    above('atmega328', { key: 'suction', type: 'barGraph' }, 'board:PB2'),
+    driver('board:PB1', { key: 'motor', type: 'motor' }, 'power:b', 3),
+    outputs('board', [{ key: 'power', pin: 'PB5', type: 'led', color: 'green', ohms: 220, wire: 'green' }], 'knob:B'),
+  ),
+  // the robot vacuum sucks all the time and drives on, slowing down near a wall and beeping right at it
+  appRobotVacuum: join(
+    boardAt('atmega328', { PB0: 'on', PB1: 'invert', PB4: 'on', PB5: 'alarm' }),
+    sensorFor('board', 'atmega328', 'ultrasonic', { sense: 0.8 }),
+    driver('board:PB1', { key: 'wheels', type: 'motor' }, 'power:b', 3),
+    driver('board:PB0', { key: 'suction', type: 'fan' }, 'power:b', 6, 1000, DRIVER_2),
+    outputs('board', [
+      { key: 'beeper', pin: 'PB5', type: 'buzzer', ohms: 100, wire: 'white' },
+      { key: 'power', pin: 'PB4', type: 'led', color: 'green', ohms: 220, wire: 'green' },
+    ], 'sensor:GND'),
+  ),
+  // the juicer's motor turns only while the lid is locked on, so no finger can reach the blade
+  appJuicer: join(
+    {
+      parts: [
+        { key: 'board', type: 'attiny85', x: 0, y: 0, data: program('attiny85', { PB0: 'follow', PB2: 'follow', PB4: 'invert' }) },
+        { key: 'lid', type: 'slideSwitch', x: -330, y: -230, rotation: 90, data: { closed: true } },
+        { key: 'pull', type: 'resistor', x: -330, y: 30, rotation: 90, data: { resistance: 1000 } },
+      ],
+      wires: [
+        ['board:5V', 'lid:COM', 'red'],
+        ['lid:B', 'board:PB3', 'yellow'],
+        ['lid:B', 'pull:a', 'yellow'],
+        ['pull:b', 'board:GND', 'black'],
+      ],
+    },
+    driver('board:PB0', { key: 'blade', type: 'motor' }, 'pull:b', 3),
+    outputs('board', [
+      { key: 'open', pin: 'PB4', type: 'led', color: 'red', ohms: 220, wire: 'white' },
+      { key: 'running', pin: 'PB2', type: 'led', color: 'green', ohms: 220, wire: 'green' },
+    ], 'pull:b'),
+  ),
+  // the mixer turns slowly through one resistor; hold TURBO and a second resistor makes it fast
+  appMixer: join(
+    boardAt('attiny85', { PB0: 'on', PB1: 'follow', PB2: 'follow', PB4: 'on' }),
+    pulledDown('attiny85', { key: 'turbo', type: 'button' }),
+    driver('board:PB0', { key: 'beaters', type: 'motor' }, 'power:b', 3, 2200),
+    {
+      parts: [{ key: 'turboR', type: 'resistor', x: DRIVER.x, y: DRIVER.y - 310, data: { resistance: 1000 } }],
+      wires: [
+        ['board:PB1', 'turboR:a', 'green'],
+        ['turboR:b', 'beatersQ:B', 'green'],
+      ],
+    },
+    outputs('board', [
+      { key: 'power', pin: 'PB4', type: 'led', color: 'green', ohms: 220, wire: 'green' },
+      { key: 'fast', pin: 'PB2', type: 'led', color: 'orange', ohms: 220, wire: 'yellow' },
+    ], 'pull:b'),
+  ),
+  // push the lever down: the switch closes and the heating coils glow red
+  appToaster: join(
+    boardAt('attiny85', { PB0: 'follow', PB2: 'invert', PB4: 'follow' }),
+    pulledDown('attiny85', { key: 'lever', type: 'switch', data: { closed: true } }),
+    driver('board:PB0', { key: 'coils', type: 'heater' }, 'pull:b'),
+    outputs('board', [
+      { key: 'toasting', pin: 'PB4', type: 'led', color: 'orange', ohms: 220, wire: 'yellow' },
+      { key: 'ready', pin: 'PB2', type: 'led', color: 'green', ohms: 220, wire: 'green' },
+    ], 'pull:b'),
+  ),
+  // the iron heats until its plate is hot; only a hot iron can turn water into steam
+  appIron: join(
+    boardAt('atmega328', { PB0: 'invert', PB2: 'follow', PB4: 'follow', PB5: 'invert' }),
+    sensorFor('board', 'atmega328', 'tempSensor', { sense: 0.3 }),
+    driver('board:PB0', { key: 'plate', type: 'heater' }, 'ready:b'),
+    driver('board:PB2', { key: 'steam', type: 'pump' }, 'ready:b', 4.5, 1000, DRIVER_2),
+    outputs('board', [
+      { key: 'heating', pin: 'PB5', type: 'led', color: 'orange', ohms: 220, wire: 'yellow' },
+      { key: 'ready', pin: 'PB4', type: 'led', color: 'green', ohms: 220, wire: 'green' },
+    ], 'sensor:GND'),
+  ),
+  // the oven heats less and less as it nears its temperature, the fan spreads the heat and the light stays on
+  appOven: join(
+    boardAt('stm32', { PA8: 'invert', PB6: 'on', PB12: 'follow', PB13: 'on' }),
+    sensorFor('board', 'stm32', 'tempSensor', { sense: 0.25 }),
+    driver('board:PA8', { key: 'element', type: 'heater' }, 'light:b', 6, 470),
+    driver('board:PB6', { key: 'fan', type: 'fan' }, 'light:b', 6, 2200, DRIVER_2),
+    outputs('board', [
+      { key: 'light', pin: 'PB13', type: 'led', color: 'yellow', ohms: 47, wire: 'yellow' },
+      { key: 'ready', pin: 'PB12', type: 'led', color: 'green', ohms: 47, wire: 'green' },
+    ], 'sensor:GND'),
+  ),
+  // the heater warms the room, but if it tips over, the tilt switch cuts it off and it beeps
+  appHeater: join(
+    boardAt('attiny85', { PB0: 'invert', PB2: 'alarm', PB4: 'invert' }),
+    pulledDown('attiny85', { key: 'tilt', type: 'tilt', data: { sense: 0 } }),
+    driver('board:PB0', { key: 'coils', type: 'heater' }, 'pull:b'),
+    outputs('board', [
+      { key: 'warm', pin: 'PB4', type: 'led', color: 'orange', ohms: 220, wire: 'yellow' },
+      { key: 'beeper', pin: 'PB2', type: 'buzzer', ohms: 100, wire: 'white' },
+    ], 'pull:b'),
+  ),
+  // the samovar heats only while there is water in it, so it can never boil dry
+  appSamovar: join(
+    boardAt('atmega328', { PB0: 'follow', PB1: 'follow', PB4: 'follow', PB5: 'invert' }),
+    above('atmega328', { key: 'level', type: 'barGraph' }, 'board:PB1'),
+    sensorFor('board', 'atmega328', 'waterSensor', { sense: 0.6 }),
+    driver('board:PB0', { key: 'heater', type: 'heater' }, 'water:b'),
+    outputs('board', [
+      { key: 'empty', pin: 'PB5', type: 'led', color: 'red', ohms: 220, wire: 'white' },
+      { key: 'water', pin: 'PB4', type: 'led', color: 'green', ohms: 220, wire: 'green' },
+    ], 'sensor:GND'),
+  ),
+  // heat the water, pump it through the coffee, then keep the pot warm: three steps, round and round
+  appCoffee: join(
+    boardAt('atmega32', { PB0: 'step1', PB1: 'step2', PB3: 'step1', PD4: 'step2', PD5: 'step3' }),
+    driver('board:PB0', { key: 'boiler', type: 'heater' }, 'board:GND'),
+    driver('board:PB1', { key: 'pump', type: 'pump' }, 'board:GND', 4.5, 1000, DRIVER_2),
+    outputs('board', [
+      { key: 'warm', pin: 'PD5', type: 'led', color: 'orange', ohms: 220, wire: 'yellow' },
+      { key: 'brewing', pin: 'PD4', type: 'led', color: 'yellow', ohms: 220, wire: 'yellow' },
+      { key: 'heating', pin: 'PB3', type: 'led', color: 'red', ohms: 220, wire: 'white' },
+    ]),
+  ),
+  // fill (blue), spray the dishes with the pump, then dry them with the heater, the door locked all along
+  appDishwasher: join(
+    boardAt('stm32', { PA8: 'step2', PA9: 'step3', PB12: 'on', PB13: 'step1' }),
+    driver('board:PA8', { key: 'spray', type: 'pump' }, 'lock:b', 4.5, 470),
+    driver('board:PA9', { key: 'dryer', type: 'heater' }, 'lock:b', 6, 470, DRIVER_2),
+    outputs('board', [
+      { key: 'filling', pin: 'PB13', type: 'led', color: 'blue', ohms: 10, wire: 'blue' },
+      { key: 'lock', pin: 'PB12', type: 'led', color: 'red', ohms: 47, wire: 'white' },
+    ]),
+  ),
+  // dry air: the mist maker shakes water into a fine mist until the air is damp enough
+  appHumidifier: join(
+    boardAt('attiny85', { PB1: 'follow', PB2: 'invert', PB4: 'invert' }),
+    sensorFor('board', 'attiny85', 'humiditySensor', { sense: 0.3 }),
+    driver('board:PB2', { key: 'mist', type: 'vibration' }, 'damp:b', 3),
+    outputs('board', [
+      { key: 'misting', pin: 'PB4', type: 'led', color: 'blue', ohms: 22, wire: 'blue' },
+      { key: 'damp', pin: 'PB1', type: 'led', color: 'green', ohms: 220, wire: 'green' },
+    ], 'sensor:GND'),
+  ),
+  // dirty air spins the fan faster through the filter, and the phone shows how clean the air is
+  appAirPurifier: join(
+    boardAt('stm32', { PA8: 'follow', PA9: 'follow', PB12: 'invert', PB13: 'follow' }),
+    above('stm32', { key: 'wifi', type: 'wifi' }, 'board:PA8'),
+    sensorFor('board', 'stm32', 'gasSensor', { sense: 0.35 }),
+    driver('board:PA9', { key: 'fan', type: 'fan' }, 'clean:b', 6, 2200),
+    outputs('board', [
+      { key: 'dirty', pin: 'PB13', type: 'led', color: 'red', ohms: 47, wire: 'white' },
+      { key: 'clean', pin: 'PB12', type: 'led', color: 'green', ohms: 47, wire: 'green' },
+    ], 'sensor:GND'),
+  ),
+  // a desk fan: the knob sets its speed, and a servo swings its head from side to side
+  appDeskFan: join(
+    {
+      parts: [
+        { key: 'board', type: 'attiny85', x: 0, y: 0, data: program('attiny85', { PB0: 'fade', PB1: 'follow', PB4: 'on' }) },
+        { key: 'knob', type: 'potentiometer', ...SENSOR_SPOT, data: { level: 0.8, resistance: 10000 } },
+      ],
+      wires: [
+        ['board:5V', 'knob:A', 'red'],
+        ['knob:B', 'board:GND', 'black'],
+        ['knob:W', 'board:PB3', 'yellow'],
+      ],
+    },
+    above('attiny85', { key: 'swing', type: 'servo' }),
+    { parts: [], wires: [['board:PB0', 'swing:OUT', 'blue']] },
+    driver('board:PB1', { key: 'fan', type: 'fan' }, 'power:b', 6, 4700),
+    outputs('board', [{ key: 'power', pin: 'PB4', type: 'led', color: 'green', ohms: 220, wire: 'green' }], 'knob:B'),
+  ),
+  // press the foot pedal harder and the sewing machine runs faster; the needle light is always on
+  appSewing: join(
+    boardAt('atmega32', { PB0: 'on', PD5: 'follow' }),
+    sensorFor('board', 'atmega32', 'forceSensor', { sense: 0.5 }),
+    driver('board:PD5', { key: 'motor', type: 'motor' }, 'lamp:b', 3),
+    outputs('board', [{ key: 'lamp', pin: 'PB0', type: 'led', color: 'white', ohms: 100, wire: 'white' }], 'sensor:GND'),
+  ),
 }
 
 /** How hard an example is to understand: 1 easy, 2 medium, 3 hard. */
@@ -3595,6 +4019,7 @@ export type PresetCategory =
   | 'car'
   | 'factory'
   | 'oil'
+  | 'appliances'
 
 export const PRESET_CATEGORIES: readonly PresetCategory[] = [
   'first',
@@ -3611,6 +4036,7 @@ export const PRESET_CATEGORIES: readonly PresetCategory[] = [
   'sound',
   'motion',
   'home',
+  'appliances',
   'games',
   'screens',
 ]
@@ -3767,6 +4193,37 @@ export const PRESET_INFO: Record<PresetId, PresetInfo> = {
   aiWeatherCloud: { category: 'ai', level: 2, art: ['tempSensor', 'aiBoard', 'wifi'] },
   aiFactoryLine: { category: 'ai', level: 2, art: ['irSensor', 'aiBoard', 'transistor', 'motor'] },
   aiWellGuard: { category: 'ai', level: 3, art: ['gasSensor', 'aiBoard', 'beacon', 'gsm'] },
+
+  avrBlink: { category: 'boards', level: 1, art: ['atmega328', 'led:red', 'led:blue'] },
+  tinyCandle: { category: 'boards', level: 1, art: ['attiny85', 'led:yellow', 'led:red'] },
+  mega32Chaser: { category: 'boards', level: 2, art: ['atmega32', 'led:red', 'led:yellow', 'led:green'] },
+  stm32Dimmer: { category: 'boards', level: 2, art: ['potentiometer', 'stm32', 'barGraph'] },
+
+  appKettle: { category: 'appliances', level: 1, art: ['tempSensor', 'attiny85', 'heater', 'buzzer'] },
+  appVacuum: { category: 'appliances', level: 1, art: ['potentiometer', 'atmega328', 'motor', 'barGraph'] },
+  appJuicer: { category: 'appliances', level: 1, art: ['slideSwitch', 'attiny85', 'motor'] },
+  appToaster: { category: 'appliances', level: 1, art: ['switch', 'attiny85', 'heater'] },
+  appHumidifier: { category: 'appliances', level: 1, art: ['humiditySensor', 'attiny85', 'vibration'] },
+  appSewing: { category: 'appliances', level: 1, art: ['forceSensor', 'atmega32', 'motor', 'led:white'] },
+  appMixer: { category: 'appliances', level: 2, art: ['button', 'attiny85', 'transistor', 'motor'] },
+  appIron: { category: 'appliances', level: 2, art: ['tempSensor', 'atmega328', 'heater', 'pump'] },
+  appOven: { category: 'appliances', level: 2, art: ['tempSensor', 'stm32', 'heater', 'fan'] },
+  appHeater: { category: 'appliances', level: 2, art: ['tilt', 'attiny85', 'heater', 'buzzer'] },
+  appSamovar: { category: 'appliances', level: 2, art: ['waterSensor', 'atmega328', 'heater', 'barGraph'] },
+  appCoffee: { category: 'appliances', level: 2, art: ['atmega32', 'heater', 'pump'] },
+  appAirPurifier: { category: 'appliances', level: 2, art: ['gasSensor', 'stm32', 'fan', 'wifi'] },
+  appDeskFan: { category: 'appliances', level: 2, art: ['potentiometer', 'attiny85', 'servo', 'fan'] },
+  appRobotVacuum: { category: 'appliances', level: 3, art: ['ultrasonic', 'atmega328', 'motor', 'fan'] },
+  appDishwasher: { category: 'appliances', level: 3, art: ['stm32', 'pump', 'heater'] },
+  appCeilingFan: { category: 'appliances', level: 1, art: ['potentiometer', 'attiny85', 'fan'] },
+  appKitchenHood: { category: 'appliances', level: 1, art: ['gasSensor', 'stm32', 'fan'] },
+  appWasher: { category: 'appliances', level: 2, art: ['atmega32', 'motor', 'pump'] },
+  appMicrowave: { category: 'appliances', level: 2, art: ['slideSwitch', 'attiny85', 'lamp', 'motor'] },
+  appCooler: { category: 'appliances', level: 2, art: ['tempSensor', 'atmega328', 'fan', 'pump'] },
+  appWaterTank: { category: 'appliances', level: 2, art: ['waterSensor', 'atmega328', 'pump', 'barGraph'] },
+  appGarageDoor: { category: 'appliances', level: 2, art: ['switch', 'atmega32', 'servo', 'beacon'] },
+  appFridge: { category: 'appliances', level: 3, art: ['thermistor', 'comparator', 'atmega328', 'motor'] },
+  appAirCon: { category: 'appliances', level: 3, art: ['tempSensor', 'stm32', 'fan', 'wifi'] },
 
   ecuHeadlights: { category: 'car', level: 1, art: ['ldr', 'ecu', 'led:white'] },
   ecuCooling: { category: 'car', level: 2, art: ['tempSensor', 'ecu', 'transistor', 'fan'] },

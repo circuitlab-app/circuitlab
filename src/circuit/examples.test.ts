@@ -1849,6 +1849,280 @@ describe('talk to the AI board, second batch', () => {
   })
 })
 
+describe('AVR chips and the STM32', () => {
+  it('AVR blink: PB5 blinks once a second and PB1 fades up and down with its timer', () => {
+    expect(at('avrBlink', 0.25).blink.status).toBe('on')
+    expect(at('avrBlink', 0.75).blink.level).toBe(0)
+    expect(at('avrBlink', 1).fade.level).toBeGreaterThan(at('avrBlink', 0.1).fade.level)
+  })
+
+  it('ATtiny85 candle: the three lights never all rest at once, and they keep changing', () => {
+    const { steps } = run('tinyCandle', 2)
+    expect(pulses(steps, 'flick1')).toBe(true)
+    expect(pulses(steps, 'flick2')).toBe(true)
+    expect(steps.slice(2).every((r) => ['flick1', 'flick2'].some((k) => r.parts[k].level > 0))).toBe(true)
+  })
+
+  it('ATmega32 chaser: the lights run along, two lit at each step', () => {
+    const lit = (t: number) => ['l1', 'l2', 'l3', 'l4', 'l5', 'l6'].filter((k) => at('mega32Chaser', t)[k].status === 'on')
+    expect(lit(0.5)).toEqual(['l1', 'l4'])
+    expect(lit(1.5)).toEqual(['l2', 'l5'])
+    expect(lit(2.5)).toEqual(['l3', 'l6'])
+  })
+
+  it('STM32 dimmer: the knob sets the red light and the bars, at 3.3 V', () => {
+    const up = run('stm32Dimmer').last
+    expect(on(up, 'bright')).toBe(true)
+    expect(up.parts.bars.level).toBe(7)
+    const down = run('stm32Dimmer', 0.5, { knob: { level: 0.1 } }).last
+    expect(down.parts.bright.level).toBe(0)
+    expect(on(down, 'dim')).toBe(true)
+    expect(down.parts.bars.level).toBe(1)
+  })
+})
+
+describe('home appliances', () => {
+  it('washing machine: fill, wash with the drum turning, drain with the pump, the door locked all along', () => {
+    expect(at('appWasher', 0.5).filling.status).toBe('on')
+    expect(at('appWasher', 0.5).drum.level).toBe(0)
+    expect(Math.abs(at('appWasher', 1.5).drum.level)).toBeGreaterThan(0.3)
+    expect(at('appWasher', 1.5).drain.level).toBe(0)
+    expect(at('appWasher', 2.5).drain.status).toBe('on')
+    for (const t of [0.5, 1.5, 2.5]) expect(at('appWasher', t).lock.status).toBe('on')
+  })
+
+  it('fridge: the comparator thermostat runs the compressor while it is warmer than the knob', () => {
+    const warm = run('appFridge').last
+    expect(warm.parts.cmp.channels?.OUT).toBe(1)
+    expect(Math.abs(warm.parts.compressor.level)).toBeGreaterThan(0.3)
+    expect(on(warm, 'cooling')).toBe(true)
+    const cold = run('appFridge', 0.5, { probe: { sense: 0.05 } }).last
+    expect(cold.parts.compressor.level).toBe(0)
+    expect(on(cold, 'cold')).toBe(true)
+    // turning the knob colder starts it again
+    const colder = run('appFridge', 0.5, { probe: { sense: 0.05 }, knob: { level: 0.1 } }).last
+    expect(Math.abs(colder.parts.compressor.level)).toBeGreaterThan(0.3)
+  })
+
+  it('microwave: with the door shut the magnetron and the turntable run; open the door and both stop', () => {
+    const shut = run('appMicrowave').last
+    expect(on(shut, 'magnetron')).toBe(true)
+    expect(Math.abs(shut.parts.turntable.level)).toBeGreaterThan(0.3)
+    expect(on(shut, 'inside')).toBe(true)
+    const open = run('appMicrowave', 0.5, { door: { closed: false } }).last
+    expect(open.parts.magnetron.level).toBe(0)
+    expect(open.parts.turntable.level).toBe(0)
+    expect(on(open, 'open')).toBe(true)
+  })
+
+  it('kettle: it heats until the water is hot, then switches off and beeps', () => {
+    const cold = run('appKettle', 1)
+    expect(on(cold.last, 'heater')).toBe(true)
+    expect(on(cold.last, 'heating')).toBe(true)
+    expect(cold.steps.every((r) => r.parts.beeper.level === 0)).toBe(true)
+    const hot = run('appKettle', 2, { sensor: { sense: 0.8 } })
+    expect(hot.last.parts.heater.level).toBe(0)
+    expect(pulses(hot.steps, 'beeper')).toBe(true)
+  })
+
+  it('evaporative cooler: hotter means a faster fan, and the pump wets the pads while it is hot', () => {
+    const hot = run('appCooler').last
+    expect(on(hot, 'pads')).toBe(true)
+    expect(on(hot, 'cool')).toBe(true)
+    const mild = run('appCooler', 0.5, { sensor: { sense: 0.55 } }).last
+    expect(hot.parts.fan.level).toBeGreaterThan(mild.parts.fan.level)
+    const cold = run('appCooler', 0.5, { sensor: { sense: 0.2 } }).last
+    expect(cold.parts.pads.level).toBe(0)
+    expect(on(cold, 'fresh')).toBe(true)
+  })
+
+  it('ceiling fan: the wall knob sets the fan’s speed through PWM', () => {
+    const fast = run('appCeilingFan', 0.5, { knob: { level: 1 } }).last
+    const slow = run('appCeilingFan', 0.5, { knob: { level: 0.6 } }).last
+    expect(fast.parts.fan.level).toBeGreaterThan(slow.parts.fan.level)
+    expect(run('appCeilingFan', 0.5, { knob: { level: 0 } }).last.parts.fan.level).toBe(0)
+    expect(on(slow, 'power')).toBe(true)
+  })
+
+  it('roof tank: the pump fills it until the float reads full; the bars show the level', () => {
+    const low = run('appWaterTank').last
+    expect(on(low, 'pump')).toBe(true)
+    expect(on(low, 'filling')).toBe(true)
+    expect(low.parts.level.level).toBe(2)
+    const full = run('appWaterTank', 0.5, { sensor: { sense: 0.9 } }).last
+    expect(full.parts.pump.level).toBe(0)
+    expect(on(full, 'full')).toBe(true)
+    expect(full.parts.level.level).toBe(9)
+  })
+
+  it('garage door: the switch swings the door up and the beacon flashes; off brings it down', () => {
+    const open = run('appGarageDoor', 2)
+    expect(open.last.parts.door.level).toBeGreaterThan(0.8)
+    expect(pulses(open.steps, 'beacon')).toBe(true)
+    expect(on(open.last, 'open')).toBe(true)
+    const shut = run('appGarageDoor', 1, { remote: { closed: false } })
+    expect(shut.last.parts.door.level).toBeLessThan(0.2)
+    expect(shut.steps.slice(2).every((r) => r.parts.beacon.level === 0)).toBe(true)
+    expect(on(shut.last, 'shut')).toBe(true)
+  })
+
+  it('air conditioner: a hot room runs the compressor and a fast fan, and the reading reaches the cloud', () => {
+    const hot = run('appAirCon', 2).last
+    expect(Math.abs(hot.parts.compressor.level)).toBeGreaterThan(0.2)
+    expect(on(hot, 'blower')).toBe(true)
+    expect(hot.parts.wifi.channels?.value).toBeCloseTo(0.7, 1)
+    const cool = run('appAirCon', 0.5, { sensor: { sense: 0.3 } }).last
+    expect(cool.parts.compressor.level).toBe(0)
+    expect(on(cool, 'comfy')).toBe(true)
+  })
+
+  it('kitchen hood: more smoke runs the fan faster; the light stays on', () => {
+    const smoky = run('appKitchenHood', 0.5, { sensor: { sense: 0.9 } }).last
+    const some = run('appKitchenHood').last
+    expect(smoky.parts.hood.level).toBeGreaterThan(some.parts.hood.level)
+    expect(on(some, 'light')).toBe(true)
+    expect(on(smoky, 'smoke')).toBe(true)
+  })
+})
+
+describe('home appliances, second batch', () => {
+  const spin = (r: SimResult, key: string) => Math.abs(r.parts[key].level)
+
+  it('vacuum cleaner: the knob sets the suction motor, and the bars show how hard it pulls', () => {
+    const full = run('appVacuum', 0.5, { knob: { level: 1 } }).last
+    const half = run('appVacuum', 0.5, { knob: { level: 0.5 } }).last
+    expect(spin(full, 'motor')).toBeGreaterThan(spin(half, 'motor'))
+    expect(full.parts.suction.level).toBe(10)
+    expect(half.parts.suction.level).toBe(5)
+    expect(run('appVacuum', 0.5, { knob: { level: 0 } }).last.parts.motor.level).toBe(0)
+    expect(on(half, 'power')).toBe(true)
+  })
+
+  it('robot vacuum: it sucks and drives on; near a wall the wheels slow and stop, and it beeps', () => {
+    const open = run('appRobotVacuum', 1)
+    expect(spin(open.last, 'wheels')).toBeGreaterThan(0.2)
+    expect(on(open.last, 'suction')).toBe(true)
+    expect(open.steps.every((r) => r.parts.beeper.level === 0)).toBe(true)
+    const wall = run('appRobotVacuum', 2, { sensor: { sense: 0.02 } })
+    expect(wall.last.parts.wheels.level).toBe(0)
+    expect(on(wall.last, 'suction')).toBe(true)
+    expect(pulses(wall.steps, 'beeper')).toBe(true)
+  })
+
+  it('juicer: the blade turns only while the lid is locked on', () => {
+    const locked = run('appJuicer').last
+    expect(spin(locked, 'blade')).toBeGreaterThan(0.3)
+    expect(on(locked, 'running')).toBe(true)
+    const open = run('appJuicer', 0.5, { lid: { closed: false } }).last
+    expect(open.parts.blade.level).toBe(0)
+    expect(on(open, 'open')).toBe(true)
+  })
+
+  it('mixer: slow through one resistor, fast while TURBO adds a second one into the transistor', () => {
+    const slow = run('appMixer').last
+    expect(spin(slow, 'beaters')).toBeGreaterThan(0.1)
+    const fast = run('appMixer', 0.5, { turbo: { pressed: true } }).last
+    expect(spin(fast, 'beaters')).toBeGreaterThan(spin(slow, 'beaters') + 0.2)
+    expect(on(fast, 'fast')).toBe(true)
+    expect(slow.parts.fast.level).toBe(0)
+  })
+
+  it('toaster: lever down, the coils glow; lever up, they go cold', () => {
+    const down = run('appToaster').last
+    expect(on(down, 'coils')).toBe(true)
+    expect(on(down, 'toasting')).toBe(true)
+    const up = run('appToaster', 0.5, { lever: { closed: false } }).last
+    expect(up.parts.coils.level).toBe(0)
+    expect(on(up, 'ready')).toBe(true)
+  })
+
+  it('iron: it heats until the plate is hot; steam comes only from a hot iron', () => {
+    const cold = run('appIron').last
+    expect(on(cold, 'plate')).toBe(true)
+    expect(cold.parts.steam.level).toBe(0)
+    const hot = run('appIron', 0.5, { sensor: { sense: 0.85 } }).last
+    expect(hot.parts.plate.level).toBe(0)
+    expect(on(hot, 'steam')).toBe(true)
+    expect(on(hot, 'ready')).toBe(true)
+  })
+
+  it('oven: the element heats less as it warms up, the fan runs and the light is on', () => {
+    const cold = run('appOven').last
+    const warm = run('appOven', 0.5, { sensor: { sense: 0.6 } }).last
+    expect(cold.parts.element.level).toBeGreaterThan(warm.parts.element.level)
+    expect(on(cold, 'fan')).toBe(true)
+    expect(on(cold, 'light')).toBe(true)
+    expect(on(warm, 'ready')).toBe(true)
+  })
+
+  it('space heater: it heats while standing; tipped over, it switches off and beeps', () => {
+    const standing = run('appHeater', 1)
+    expect(on(standing.last, 'coils')).toBe(true)
+    expect(standing.steps.every((r) => r.parts.beeper.level === 0)).toBe(true)
+    const tipped = run('appHeater', 2, { tilt: { sense: 1 } })
+    expect(tipped.last.parts.coils.level).toBe(0)
+    expect(pulses(tipped.steps, 'beeper')).toBe(true)
+  })
+
+  it('samovar: it heats only with water inside, and never boils dry', () => {
+    const full = run('appSamovar').last
+    expect(on(full, 'heater')).toBe(true)
+    expect(full.parts.level.level).toBe(6)
+    const dry = run('appSamovar', 0.5, { sensor: { sense: 0.1 } }).last
+    expect(dry.parts.heater.level).toBe(0)
+    expect(on(dry, 'empty')).toBe(true)
+  })
+
+  it('coffee maker: heat the water, pump it through the coffee, then keep it warm', () => {
+    expect(at('appCoffee', 0.5).boiler.status).toBe('on')
+    expect(at('appCoffee', 0.5).pump.level).toBe(0)
+    expect(at('appCoffee', 1.5).pump.status).toBe('on')
+    expect(at('appCoffee', 1.5).boiler.level).toBe(0)
+    expect(at('appCoffee', 2.5).warm.status).toBe('on')
+  })
+
+  it('dishwasher: fill, spray with the pump, dry with the heater, the door locked all along', () => {
+    expect(at('appDishwasher', 0.5).filling.level).toBeGreaterThan(0)
+    expect(at('appDishwasher', 1.5).spray.status).toBe('on')
+    expect(at('appDishwasher', 1.5).dryer.level).toBe(0)
+    expect(at('appDishwasher', 2.5).dryer.status).toBe('on')
+    for (const t of [0.5, 1.5, 2.5]) expect(at('appDishwasher', t).lock.status).toBe('on')
+  })
+
+  it('humidifier: dry air runs the mist maker until the air is damp enough', () => {
+    const dry = run('appHumidifier').last
+    expect(spin(dry, 'mist')).toBeGreaterThan(0.3)
+    expect(on(dry, 'misting')).toBe(true)
+    const damp = run('appHumidifier', 0.5, { sensor: { sense: 0.8 } }).last
+    expect(damp.parts.mist.level).toBe(0)
+    expect(on(damp, 'damp')).toBe(true)
+  })
+
+  it('air purifier: dirtier air spins the fan faster and turns the light red; the phone sees it', () => {
+    const clean = run('appAirPurifier', 2).last
+    expect(on(clean, 'clean')).toBe(true)
+    expect(clean.parts.wifi.channels?.value).toBeCloseTo(0.35, 1)
+    const dirty = run('appAirPurifier', 0.5, { sensor: { sense: 0.9 } }).last
+    expect(dirty.parts.fan.level).toBeGreaterThan(clean.parts.fan.level)
+    expect(on(dirty, 'dirty')).toBe(true)
+  })
+
+  it('desk fan: its head swings from side to side, and the knob sets its speed', () => {
+    const { steps, last } = run('appDeskFan', 2)
+    const swing = steps.map((r) => r.parts.swing.level)
+    expect(Math.max(...swing) - Math.min(...swing)).toBeGreaterThan(0.5)
+    expect(last.parts.fan.level).toBeGreaterThan(run('appDeskFan', 0.5, { knob: { level: 0.55 } }).last.parts.fan.level)
+  })
+
+  it('sewing machine: a harder press on the pedal runs it faster; the needle light is always on', () => {
+    const gentle = run('appSewing').last
+    const hard = run('appSewing', 0.5, { sensor: { sense: 1 } }).last
+    expect(spin(hard, 'motor')).toBeGreaterThan(spin(gentle, 'motor'))
+    expect(run('appSewing', 0.5, { sensor: { sense: 0 } }).last.parts.motor.level).toBe(0)
+    expect(on(gentle, 'lamp')).toBe(true)
+  })
+})
+
 describe('every example has its own behaviour check', () => {
   it('names each new example in a test above', () => {
     for (const id of NEW_EXAMPLES) expect(thisFile.includes(`'${id}'`), id).toBe(true)

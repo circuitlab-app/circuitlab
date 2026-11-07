@@ -201,6 +201,8 @@ export const ELECTRICAL = {
    * lights it fully; above about 10 V it gets too hot
    */
   beacon: { forwardVoltage: 2, seriesResistance: 150, fullCurrent: 0.015, weakCurrent: 0.004, overCurrent: 0.055, burnCurrent: 0.12 },
+  /** heating element: an 8 Ω coil that glows from about 0.3 W, made for 2 W; above 4.5 W it overheats */
+  heater: { resistance: 8, warmPower: 0.3, ratedPower: 2, hotPower: 4.5 },
 } as const
 
 /** AA packs of 1 to 4 cells, a 9 V block and a 12 V block */
@@ -243,8 +245,12 @@ export type BoardType =
   | 'ecu'
   | 'plc'
   | 'rtu'
+  | 'atmega328'
+  | 'atmega32'
+  | 'attiny85'
+  | 'stm32'
 
-/** What a microcontroller board offers. Every board shows six output pins, its supply, GND and one input. */
+/** What a microcontroller board offers: up to six output pins (the ATtiny85 has four), its supply, GND and one input. */
 export type BoardSpec = {
   /** logic and supply voltage */
   voltage: number
@@ -259,7 +265,7 @@ export type BoardSpec = {
   /** highest number its analog input reads */
   adcMax: number
   /** language of the code shown in the details panel */
-  language: 'arduino' | 'micropython-pico' | 'micropython-microbit' | 'python' | 'iec-st'
+  language: 'arduino' | 'micropython-pico' | 'micropython-microbit' | 'python' | 'iec-st' | 'avr-c'
   /** how the pin is written in that code */
   codeName: (pin: string) => string
   /** short text printed on the header pin */
@@ -274,6 +280,14 @@ const ECU_PINS = ['OUT1', 'OUT2', 'OUT3', 'OUT4', 'OUT5', 'OUT6'] as const
 const PLC_PINS = ['AQ0', 'Q0', 'Q1', 'Q2', 'Q3', 'Q4'] as const
 /** the RTU's two analog outputs, then its four digital ones */
 const RTU_PINS = ['AO1', 'AO2', 'DO1', 'DO2', 'DO3', 'DO4'] as const
+/** ATmega328P: port B, PB1 … PB3 are the timers' PWM pins (OC1A, OC1B, OC2A) */
+const MEGA328_PINS = ['PB0', 'PB1', 'PB2', 'PB3', 'PB4', 'PB5'] as const
+/** ATmega32 (and ATmega16): PB3 is OC0, PD4 and PD5 are OC1B and OC1A */
+const MEGA32_PINS = ['PB0', 'PB1', 'PB2', 'PB3', 'PD4', 'PD5'] as const
+/** ATtiny85: five free pins, one of them (PB3) reads the sensor */
+const TINY85_PINS = ['PB0', 'PB1', 'PB2', 'PB4'] as const
+/** STM32 "Blue Pill": PA8, PA9 (TIM1) and PB6, PB7 (TIM4) can do PWM */
+const STM32_PINS = ['PA8', 'PA9', 'PB6', 'PB7', 'PB12', 'PB13'] as const
 const same = (pin: string) => pin
 const drop = (prefix: string) => (pin: string) => pin.slice(prefix.length)
 const all = (pins: readonly string[]) => new Set(pins)
@@ -403,6 +417,55 @@ export const BOARDS: Record<BoardType, BoardSpec> = {
     codeName: same,
     label: same,
   },
+  // the ATmega328P, the chip inside the Arduino Uno, on its own with a 16 MHz crystal,
+  // programmed straight through its registers in AVR C
+  atmega328: {
+    voltage: 5,
+    supply: '5V',
+    pins: MEGA328_PINS,
+    pwm: new Set(['PB1', 'PB2', 'PB3']),
+    input: 'PC0',
+    adcMax: 1023,
+    language: 'avr-c',
+    codeName: same,
+    label: same,
+  },
+  // the 40-pin ATmega32 (the ATmega16 has the same pins), the AVR many school and university courses use
+  atmega32: {
+    voltage: 5,
+    supply: '5V',
+    pins: MEGA32_PINS,
+    pwm: new Set(['PB3', 'PD4', 'PD5']),
+    input: 'PA0',
+    adcMax: 1023,
+    language: 'avr-c',
+    codeName: same,
+    label: same,
+  },
+  // the 8-pin ATtiny85: small enough for a ring, smart enough to run a kettle
+  attiny85: {
+    voltage: 5,
+    supply: '5V',
+    pins: TINY85_PINS,
+    pwm: new Set(['PB0', 'PB1', 'PB4']),
+    input: 'PB3',
+    adcMax: 1023,
+    language: 'avr-c',
+    codeName: same,
+    label: same,
+  },
+  // the STM32F103 "Blue Pill": a fast 32-bit ARM chip at 3.3 V, programmed here with the Arduino language
+  stm32: {
+    voltage: 3.3,
+    supply: '3V3',
+    pins: STM32_PINS,
+    pwm: new Set(['PA8', 'PA9', 'PB6', 'PB7']),
+    input: 'PA0',
+    adcMax: 4095,
+    language: 'arduino',
+    codeName: same,
+    label: same,
+  },
 }
 
 export const isBoard = (type: PartType): type is BoardType => type in BOARDS
@@ -488,6 +551,10 @@ export const PART_ORDER: PartType[] = [
   'ecu',
   'plc',
   'rtu',
+  'atmega328',
+  'atmega32',
+  'attiny85',
+  'stm32',
   'switch',
   'button',
   'slideSwitch',
@@ -535,6 +602,7 @@ export const PART_ORDER: PartType[] = [
   'servo',
   'electromagnet',
   'solenoid',
+  'heater',
   'ldr',
   'thermistor',
   'tilt',
@@ -645,7 +713,7 @@ const counterOutputs = Object.fromEntries(
   ]),
 )
 
-/** Boards: supply, GND and the input on the left, the six output pins on the right. */
+/** Boards: supply, GND and the input on the left, the output pins on the right. */
 function boardTerminals(spec: BoardSpec): Record<TerminalId, TerminalDef> {
   return {
     [spec.supply]: { side: 'left', offset: 0.74, label: spec.supply, pin: true, polarity: '+' },
@@ -768,6 +836,10 @@ export const PARTS: Record<PartType, PartDef> = {
   ecu: board('ecu', '#dc2626'),
   plc: board('plc', '#0d9488'),
   rtu: board('rtu', '#ea580c'),
+  atmega328: board('atmega328', '#0f766e'),
+  atmega32: board('atmega32', '#1d4ed8'),
+  attiny85: board('attiny85', '#9333ea'),
+  stm32: board('stm32', '#2563eb'),
   gsm: radio('gsm', '#e11d48'),
   wifi: radio('wifi', '#2563eb'),
   bluetooth: radio('bluetooth', '#0ea5e9'),
@@ -777,6 +849,7 @@ export const PARTS: Record<PartType, PartDef> = {
   rs485: radio('rs485', '#4f46e5'),
   pressureSensor: { category: 'sensor', accent: '#475569', terminals: sensorModule, defaults: { sense: 0.35 } },
   beacon: { category: 'output', accent: '#f59e0b', terminals: polarised, defaults: { color: 'orange' } },
+  heater: { category: 'output', accent: '#ea580c', terminals: twoWay, defaults: {} },
   switch: { category: 'control', accent: '#6366f1', terminals: twoWay, defaults: { closed: false } },
   button: { category: 'control', accent: '#ec4899', terminals: twoWay, defaults: {} },
   dimmer: { category: 'control', accent: '#14b8a6', terminals: twoWay, defaults: { level: 0.7 } },

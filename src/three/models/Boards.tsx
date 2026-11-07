@@ -5,7 +5,21 @@ import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { Halo, damp } from '../helpers'
 
-type Variant = 'nano' | 'mega' | 'esp32' | 'esp8266' | 'pico' | 'microbit' | 'raspberrypi' | 'ecu' | 'plc' | 'rtu'
+type Variant =
+  | 'nano'
+  | 'mega'
+  | 'esp32'
+  | 'esp8266'
+  | 'pico'
+  | 'microbit'
+  | 'raspberrypi'
+  | 'ecu'
+  | 'plc'
+  | 'rtu'
+  | 'atmega328'
+  | 'atmega32'
+  | 'attiny85'
+  | 'stm32'
 
 /** same lean as the Arduino UNO so every board shares one camera framing */
 const TILT = 0.72
@@ -36,6 +50,13 @@ type Mat =
   | 'slate'
   | 'ink'
   | 'rubber'
+  | 'yellow'
+  | 'ceramic'
+  | 'violet'
+  | 'mint'
+
+/** the ATtiny85 board's purple, shared by its PCB and the USB plug cut from it */
+const TINY_PCB = '#5b2a9c'
 
 /** No environment map here, so big metal faces keep some diffuse colour instead of turning black. */
 const MATERIALS: Record<Mat, { color: string; roughness: number; metalness?: number }> = {
@@ -65,6 +86,14 @@ const MATERIALS: Record<Mat, { color: string; roughness: number; metalness?: num
   ink: { color: '#0f3b37', roughness: 0.6 },
   /** the matte black of an antenna */
   rubber: { color: '#151517', roughness: 0.85 },
+  /** the plastic of a jumper block */
+  yellow: { color: '#f5c518', roughness: 0.5 },
+  /** a ceramic disc capacitor's dipped coat */
+  ceramic: { color: '#c8782c', roughness: 0.6 },
+  /** the ATtiny85 board's PCB, for the USB plug that sticks out of it */
+  violet: { color: TINY_PCB, roughness: 0.55, metalness: 0.1 },
+  /** an unlit green SMD LED */
+  mint: { color: '#cdeedb', roughness: 0.35 },
 }
 
 type Prim =
@@ -250,7 +279,7 @@ function meanderX(L: Layout, x0: number, x1: number, z0: number, runs: number, s
 }
 
 /* seven-segment digits and a few letters, printed flat; "up" is −z */
-const SEGMENTS: Record<string, string> = { '0': 'abcdef', '1': 'bc', '2': 'abged', '3': 'abgcd', E: 'adefg', C: 'adef', U: 'bcdef', P: 'abefg', L: 'def' }
+const SEGMENTS: Record<string, string> = { '0': 'abcdef', '1': 'bc', '2': 'abged', '3': 'abgcd', '4': 'bcfg', '5': 'acdfg', E: 'adefg', C: 'adef', U: 'bcdef', P: 'abefg', L: 'def' }
 
 function glyph(L: Layout, ch: string, x: number, z: number, h = 0.13, s = 0.022, lift = 0) {
   const flat = (mat: Mat, w: number, d: number, fx: number, fz: number, turn = 0) => L.flat(mat, w, d, fx, fz, turn, lift)
@@ -299,7 +328,7 @@ function glyph(L: Layout, ch: string, x: number, z: number, h = 0.13, s = 0.022,
 type Spec = {
   pcb: { w: number; d: number; color: string; x?: number }
   layout: Layout
-  /** (x, z) of the six output LEDs */
+  /** (x, z) of the output LEDs, one per output pin in pin order (six; four on the ATtiny85) */
   leds: [number, number][]
   ledSize: [number, number]
   power: [number, number]
@@ -874,7 +903,285 @@ function rtu(): Spec {
   }
 }
 
-const SPECS: Record<Variant, () => Spec> = { nano, mega, esp32, esp8266, pico, microbit, raspberrypi, ecu, plc, rtu }
+/* ------------------------------------- the bare microcontroller boards */
+
+/**
+ * DIP chip lying along x: black body, a row of silver legs down each long
+ * side, the notch and pin-1 dot at the left end. In a socket it stands on a
+ * low dark frame, the legs bent down into it.
+ */
+function dip(L: Layout, x: number, z: number, len: number, w: number, n: number, socket = true) {
+  const base = socket ? 0.05 : 0
+  const h = 0.09
+  /** the gap under the body, where the legs bend down */
+  const gap = base + 0.03
+  const span = len - 0.16
+  const pitch = span / (n - 1)
+  const legW = Math.min(0.05, pitch * 0.45)
+  if (socket) {
+    L.top('dark', [len + 0.12, base, w + 0.3], x, z)
+    // the open slot down the middle of the frame
+    L.flat('hole', len - 0.2, w * 0.3, x, z, 0, base)
+  }
+  const shoulder = TOP + gap + h * 0.4
+  for (let i = 0; i < n; i++) {
+    const lx = x - span / 2 + i * pitch
+    for (const side of [-1, 1]) {
+      L.box('silver', [legW, 0.016, 0.07], [lx, shoulder, z + side * (w / 2 + 0.035)])
+      L.box('silver', [legW * 0.7, shoulder - TOP - base, 0.018], [lx, (shoulder + TOP + base) / 2, z + side * (w / 2 + 0.065)])
+    }
+  }
+  L.top('black', [len, h, w], x, z, 0, gap)
+  const top = TOP + gap + h
+  L.cyl('hole', w * 0.15, 0.004, [x - len / 2, top + 0.002, z], 'y', true, 0, 16)
+  L.cyl('grey', Math.min(0.03, w * 0.07), 0.004, [x - len / 2 + 0.11, top + 0.002, z + w / 2 - 0.09])
+  // the part number printed on top
+  const t = Math.min(0.035, w * 0.09)
+  L.box('grey', [len * 0.5, 0.004, t], [x + len * 0.05, top + 0.002, z - w * 0.12])
+  L.box('grey', [len * 0.32, 0.004, t], [x - len * 0.04, top + 0.002, z + w * 0.12])
+}
+
+/** HC-49 crystal: a low silver can with rounded ends, its long side along x (turned by `turn`) */
+function crystal(L: Layout, x: number, z: number, len: number, w: number, h: number, turn = 0) {
+  const c = Math.cos(turn)
+  const s = Math.sin(turn)
+  const r = w / 2
+  L.top('silver', [len - w, h, w], x, z, turn)
+  for (const e of [-1, 1]) L.cyl('silver', r, h, [x + e * ((len - w) / 2) * c, TOP + h / 2, z - e * ((len - w) / 2) * s])
+  // the wider rim at its foot
+  L.top('grey', [len - w, 0.02, w + 0.03], x, z, turn)
+}
+
+/** ceramic disc capacitor standing on its two legs, its face to the front */
+function discCap(L: Layout, x: number, z: number, r = 0.06) {
+  L.cyl('ceramic', r, 0.03, [x, TOP + 0.05 + r, z], 'z', false, 0, 16)
+  for (const dx of [-0.022, 0.022]) L.box('silver', [0.012, 0.06, 0.012], [x + dx, TOP + 0.03, z])
+}
+
+/** radial electrolytic capacitor standing up: a sleeve, the silver top and the minus stripe facing front */
+function radialCap(L: Layout, x: number, z: number, r: number, h: number, sleeve: Mat = 'black') {
+  L.cyl(sleeve, r, h, [x, TOP + h / 2, z], 'y', false, 0, 20)
+  L.cyl('silver', r * 0.88, 0.006, [x, TOP + h + 0.003, z], 'y', false, 0, 20)
+  L.box('grey', [r * 0.5, h * 0.92, 0.012], [x + r * 0.35, TOP + h / 2, z + r * 0.9], -0.36)
+}
+
+/** TO-220 regulator (the 7805) lying flat: metal tab and its hole at the back, legs bent down at the front */
+function to220(L: Layout, x: number, z: number) {
+  L.top('silver', [0.32, 0.02, 0.22], x, z - 0.24)
+  L.cyl('hole', 0.045, 0.03, [x, TOP + 0.012, z - 0.26])
+  L.top('black', [0.32, 0.1, 0.3], x, z - 0.02)
+  for (const dx of [-0.1, 0, 0.1]) L.top('silver', [0.035, 0.018, 0.2], x + dx, z + 0.22)
+}
+
+/** round DC barrel jack, its opening facing out of the left edge */
+function dcJack(L: Layout, x: number, z: number) {
+  L.top('black', [0.5, 0.34, 0.32], x, z)
+  L.cyl('hole', 0.1, 0.02, [x - 0.255, TOP + 0.16, z], 'x')
+  L.cyl('silver', 0.03, 0.024, [x - 0.256, TOP + 0.16, z], 'x')
+}
+
+/** male header running along z */
+function maleRowZ(L: Layout, x: number, z0: number, n: number, pitch: number, pinH = 0.2) {
+  L.top('black', [pitch, 0.08, n * pitch], x, z0 + (n * pitch) / 2)
+  for (let i = 0; i < n; i++) L.box('gold', [pitch * 0.3, pinH, pitch * 0.3], [x, TOP + pinH / 2, z0 + pitch / 2 + i * pitch])
+}
+
+/** shrouded 2 × n box header (the 10-pin ISP plug) running along z, its key slot facing +x */
+function boxHeader(L: Layout, x: number, z: number, n: number, pitch: number) {
+  const W = 2 * pitch + 0.16
+  const D = n * pitch + 0.16
+  const H = 0.2
+  const t = 0.035
+  L.top('black', [W, 0.03, D], x, z)
+  for (const s of [-1, 1]) {
+    L.top('black', [W, H, t], x, z + s * ((D - t) / 2))
+    L.top('black', [t, H, D], x + s * ((W - t) / 2), z)
+  }
+  L.box('hole', [0.008, H * 0.6, pitch * 1.6], [x + W / 2 + 0.004, TOP + H * 0.62, z])
+  for (let i = 0; i < n; i++) {
+    for (const c of [-0.5, 0.5]) L.box('gold', [0.03, 0.15, 0.03], [x + c * pitch, TOP + 0.03 + 0.075, z - ((n - 1) / 2) * pitch + i * pitch])
+  }
+}
+
+/** yellow 3-pin jumper block along z with a black jumper cap over two of its pins (`cap` 0: the back two) */
+function jumper(L: Layout, x: number, z: number, pitch: number, cap: 0 | 1) {
+  L.top('yellow', [pitch * 0.95, 0.08, pitch * 2.95], x, z)
+  for (let i = -1; i <= 1; i++) L.box('gold', [pitch * 0.3, 0.2, pitch * 0.3], [x, TOP + 0.1, z + i * pitch])
+  L.top('black', [pitch * 0.9, 0.17, pitch * 1.9], x, z + (cap - 0.5) * pitch, 0, 0.08)
+}
+
+/** a bare ATmega328P (the Arduino Uno's chip) in its socket on a small green board */
+function atmega328(): Spec {
+  const L = new Layout()
+  const P = 0.2
+  const X0 = -1.4
+  for (const z of [-0.62, 0.62]) maleRow(L, X0, 14, z, P)
+  dip(L, 0.15, 0.02, 1.72, 0.42, 14)
+  // the 16 MHz crystal and its two 22 pF capacitors
+  crystal(L, -1.0, 0.02, 0.44, 0.17, 0.15, Math.PI / 2)
+  for (const z of [-0.26, 0.3]) discCap(L, -1.24, z)
+  // reset button, the 10 µF supply capacitor, the 6-pin ISP header
+  button(L, -1.5, -0.25, 'black', 0.2, 0.055)
+  radialCap(L, -1.5, 0.25, 0.1, 0.24, 'blue')
+  icsp(L, 1.38, 0.02)
+  smd(L, 'tan', [
+    [1.38, -0.33],
+    [-1.0, 0.43],
+  ])
+  smd(L, 'dark', [[1.2, 0.43]])
+  for (const x of [-1.6, 1.6]) for (const z of [-0.62, 0.62]) mountHole(L, x, z, 0.06)
+  return {
+    pcb: { w: 3.4, d: 1.5, color: '#1a7340' },
+    layout: L,
+    leds: Array.from({ length: OUTPUTS }, (_, i) => [X0 + P / 2 + (7 + i) * P, -0.43]),
+    ledSize: [0.08, 0.05],
+    power: [1.42, 0.43],
+    powerColor: '#ef4444',
+    shift: 0.02,
+    lift: -0.06,
+  }
+}
+
+/** an ATmega32 (the ATmega16's twin) on a blue AVR development board */
+function atmega32(): Spec {
+  const L = new Layout()
+  const P = 0.1
+  // ports A and B along the back edge, C and D along the front
+  for (const z of [-0.8, 0.8]) for (const x0 of [-0.95, 0.3]) femaleRow(L, x0, 10, z, P)
+  for (const z of [-0.69, 0.69]) for (const x0 of [-0.95, 0.3]) L.flat('silk', 1.0, 0.018, x0 + 0.5, z)
+  dip(L, 0.2, 0.05, 2.0, 0.56, 20)
+  // the 8 MHz crystal and its capacitors, left of the chip
+  crystal(L, -1.04, 0.05, 0.42, 0.16, 0.15, Math.PI / 2)
+  for (const z of [-0.3, 0.4]) discCap(L, -1.04, z)
+  // power: the barrel jack, the 7805 lying flat and its capacitors
+  dcJack(L, -1.45, 0.6)
+  to220(L, -1.42, -0.14)
+  radialCap(L, -1.42, -0.62, 0.1, 0.24)
+  button(L, -1.08, -0.6, 'red', 0.2, 0.055)
+  // the 10-pin ISP plug at the right end
+  boxHeader(L, 1.5, 0.05, 5, 0.1)
+  smd(L, 'tan', [
+    [1.5, -0.5],
+    [-0.75, 0.6],
+  ])
+  smd(L, 'dark', [[1.5, 0.6]], Math.PI / 2)
+  label(L, 1.0, -0.6, 0.4, [0.4, 0.26])
+  for (const [x, z] of [
+    [-1.58, -0.82],
+    [1.58, -0.82],
+    [1.58, 0.82],
+  ]) mountHole(L, x, z, 0.065)
+  return {
+    pcb: { w: 3.4, d: 1.9, color: '#1d4f9c' },
+    layout: L,
+    leds: Array.from({ length: OUTPUTS }, (_, i) => [-0.82 + i * 0.13, -0.58]),
+    ledSize: [0.07, 0.045],
+    power: [1.5, 0.48],
+    powerColor: '#22c55e',
+    shift: 0.03,
+    lift: -0.08,
+  }
+}
+
+/** an ATtiny85 on a tiny USB-stick board, scaled up to the others' width */
+function attiny85(): Spec {
+  const L = new Layout()
+  // the USB plug is cut from the board itself: a tongue with four gold fingers, the outer two longer
+  L.box('violet', [1.16, BOARD_T * 0.96, 1.15], [-1.12, 0, 0])
+  for (const [z, x0] of [
+    [-0.36, -1.62],
+    [-0.12, -1.52],
+    [0.12, -1.52],
+    [0.36, -1.62],
+  ]) L.flat('gold', -0.98 - x0, 0.12, (x0 - 0.98) / 2, z)
+  for (const z of [-0.36, -0.12, 0.12, 0.36]) L.flat('copper', 0.5, 0.025, -0.73, z)
+  dip(L, 0.5, -0.26, 0.66, 0.44, 4)
+  // the 78M05 regulator, its capacitors and the USB parts
+  dpak(L, -0.25, -0.42)
+  smd(L, 'tan', [
+    [-0.3, 0.05],
+    [-0.3, 0.22],
+  ])
+  smd(L, 'dark', [
+    [-0.08, 0.42],
+    [-0.28, 0.42],
+  ], Math.PI / 2)
+  // P0 … P5 along the front edge with their numbers, 5V GND VIN up the right
+  const P = 0.22
+  maleRow(L, 0.05, 6, 0.7, P)
+  for (let i = 0; i < 6; i++) glyph(L, String(i), 0.16 + i * P, 0.21, 0.11, 0.02)
+  maleRowZ(L, 1.52, -0.66, 3, P)
+  return {
+    pcb: { w: 2.3, d: 1.75, color: TINY_PCB, x: 0.55 },
+    layout: L,
+    // PB0, PB1, PB2 and PB4; PB3 reads the sensor
+    leds: [0, 1, 2, 4].map((i) => [0.16 + i * P, 0.41]),
+    ledSize: [0.08, 0.05],
+    power: [1.16, -0.6],
+    powerColor: '#22c55e',
+    shift: 0,
+    lift: -0.06,
+  }
+}
+
+/** the STM32F103 "Blue Pill" */
+function stm32(): Spec {
+  const L = new Layout()
+  const P = 0.163
+  const X0 = -1.63
+  for (const z of [-0.6, 0.6]) maleRow(L, X0, 20, z, P)
+  port(L, -1.6, 0, [0.3, 0.12, 0.36], 'x', -1, [0.24, 0.045])
+  // the LQFP-48 chip, set at 45°, with its pin-1 dot
+  chip(L, 0.3, 0, 0.5, 0.5, 12, 4, Math.PI / 4)
+  L.cyl('grey', 0.03, 0.004, [0.3, TOP + 0.052, -0.24])
+  L.box('grey', [0.24, 0.004, 0.03], [0.3, TOP + 0.052, 0.02], Math.PI / 4)
+  // reset button and the 3.3 V regulator by the USB socket
+  button(L, -1.1, -0.22, 'black', 0.2, 0.055)
+  L.top('dark', [0.12, 0.04, 0.1], -1.1, 0.28)
+  // BOOT0 and BOOT1 jumpers
+  for (const x of [-0.72, -0.5]) jumper(L, x, 0.05, 0.13, 0)
+  // the 8 MHz crystal, the small 32.768 kHz one, the green PC13 LED and the SWD header
+  crystal(L, 0.98, 0.26, 0.36, 0.14, 0.1)
+  L.cyl('silver', 0.045, 0.24, [0.98, TOP + 0.045, -0.22], 'x')
+  L.top('mint', [0.07, 0.035, 0.045], 1.3, 0.3)
+  maleRowZ(L, 1.56, -0.26, 4, 0.13)
+  smd(L, 'tan', [
+    [-0.25, 0.32],
+    [-0.25, -0.3],
+    [0.85, 0.02],
+  ])
+  smd(L, 'dark', [
+    [-1.32, 0.3],
+    [1.12, 0.02],
+  ], Math.PI / 2)
+  return {
+    pcb: { w: 3.4, d: 1.46, color: '#1f55c9' },
+    layout: L,
+    leds: Array.from({ length: OUTPUTS }, (_, i) => [X0 + P / 2 + (1 + i) * P, -0.43]),
+    ledSize: [0.07, 0.045],
+    power: [1.3, -0.3],
+    powerColor: '#ef4444',
+    shift: 0.03,
+    lift: -0.08,
+  }
+}
+
+const SPECS: Record<Variant, () => Spec> = {
+  nano,
+  mega,
+  esp32,
+  esp8266,
+  pico,
+  microbit,
+  raspberrypi,
+  ecu,
+  plc,
+  rtu,
+  atmega328,
+  atmega32,
+  attiny85,
+  stm32,
+}
 
 const unit = (v: number | undefined) => THREE.MathUtils.clamp(v !== undefined && Number.isFinite(v) ? v : 0, 0, 1)
 
@@ -935,10 +1242,11 @@ function Screen({ screen, powered }: { screen: NonNullable<Spec['screen']>; powe
 }
 
 /**
- * Other microcontroller, computer and industrial boards. Each shows its six
- * output pins as LEDs (amber unless the board has its own colour) beside the
- * header, plus a power LED; the micro:bit also lights its 5 × 5 grid, one
- * column per output, and the PLC's LCD lights up with the power.
+ * Other microcontroller, computer and industrial boards. Each shows its
+ * output pins (six, four on the ATtiny85) as LEDs (amber unless the board has
+ * its own colour) beside the header, plus a power LED; the micro:bit also
+ * lights its 5 × 5 grid, one column per output, and the PLC's LCD lights up
+ * with the power.
  */
 export function BoardModel({
   variant,
@@ -946,7 +1254,7 @@ export function BoardModel({
   powered,
 }: {
   variant: Variant
-  /** output level 0..1 of the board's six output pins, in order */
+  /** output level 0..1 of each of the board's output pins, in order */
   levels: number[]
   powered: boolean
 }) {

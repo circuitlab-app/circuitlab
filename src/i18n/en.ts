@@ -343,9 +343,13 @@ export type Dictionary = {
       probeLoose: string
       beaconHint: string
       beaconHot: string
+      heaterHint: string
+      heaterHot: string
     }
     eyes: string
     camera: string
+    /** how hot the heating element is */
+    heat: string
     lookWith: string
     viewHint: string
     dial: string
@@ -900,6 +904,26 @@ export const en: Dictionary = {
       description: 'The remote unit at an oil well, far from any town. It watches its sensor on AI1 and runs pumps and alarms on its own.',
       working: 'Running',
     },
+    atmega328: {
+      name: 'ATmega328P',
+      description: 'The chip inside the Arduino Uno, on its own. You program it straight through its registers in AVR C.',
+      working: 'Running code',
+    },
+    atmega32: {
+      name: 'ATmega32',
+      description: 'A 40-pin AVR chip with four ports, A to D, used in many school courses. The ATmega16 has the same pins.',
+      working: 'Running code',
+    },
+    attiny85: {
+      name: 'ATtiny85',
+      description: 'A tiny 8-pin AVR chip with four outputs and one input: small enough for a toy, smart enough for a kettle.',
+      working: 'Running code',
+    },
+    stm32: {
+      name: 'STM32 Blue Pill',
+      description: 'A fast 32-bit ARM chip on a small blue board. Its pins use 3.3 volts.',
+      working: 'Running code',
+    },
     gsm: {
       name: 'SMS module',
       description: 'A mobile phone on a chip, with its own SIM card. When IN goes HIGH, it sends a text message.',
@@ -944,6 +968,11 @@ export const en: Dictionary = {
       name: 'Warning beacon',
       description: 'A turning warning light, like on a tow truck or a factory machine. Its resistor is built in, so a board pin can run it.',
       working: 'Flashing',
+    },
+    heater: {
+      name: 'Heating element',
+      description: 'The coil inside a toaster, an iron or an oven. Current makes it hot, and it glows red as it heats up.',
+      working: 'Heating',
     },
   },
   sense: {
@@ -1247,6 +1276,35 @@ export const en: Dictionary = {
     aiWeatherCloud: { name: 'AI weather station', description: 'Red when hot, blue when cold. Ask it to send to the cloud' },
     aiNightGuard: { name: 'AI night guard', description: 'The blue light keeps watch. Ask for the floodlight' },
     aiMoodLamp: { name: 'AI mood lamp', description: 'One RGB light: ask for any colour or a rainbow' },
+    avrBlink: { name: 'AVR blink and fade', description: 'PB5 blinks and PB1 fades: AVR C, register by register' },
+    tinyCandle: { name: 'ATtiny85 candle', description: 'Three lights on an 8-pin chip flicker like a flame' },
+    mega32Chaser: { name: 'ATmega32 running lights', description: 'Six lights run along ports B and D' },
+    stm32Dimmer: { name: 'STM32 dimmer', description: 'The knob sets the light and the bars at 3.3 V' },
+    appWasher: { name: 'Washing machine', description: 'Fill, wash, drain, again and again, with the door locked' },
+    appFridge: { name: 'Refrigerator', description: 'A thermostat starts the compressor when it gets too warm inside' },
+    appMicrowave: { name: 'Microwave oven', description: 'Open the door and the magnetron stops at once' },
+    appKettle: { name: 'Electric kettle', description: 'Heats the water, then switches off and beeps' },
+    appCooler: { name: 'Evaporative cooler', description: 'Wet pads and a fan: the hotter it is, the faster it blows' },
+    appCeilingFan: { name: 'Ceiling fan regulator', description: 'The wall knob sets the fan’s speed with PWM' },
+    appWaterTank: { name: 'Roof water tank', description: 'The pump fills the tank until the float says it is full' },
+    appGarageDoor: { name: 'Garage door', description: 'The switch swings the door up while the beacon flashes' },
+    appAirCon: { name: 'Air conditioner', description: 'The compressor and the fan follow the heat; the phone sees it' },
+    appKitchenHood: { name: 'Kitchen hood', description: 'More smoke from the stove, a faster fan' },
+    appVacuum: { name: 'Vacuum cleaner', description: 'The knob sets the motor; the faster its fan spins, the harder it sucks' },
+    appRobotVacuum: { name: 'Robot vacuum', description: 'It sucks and drives on, slowing and beeping near a wall' },
+    appJuicer: { name: 'Juicer', description: 'The blade turns only while the lid is locked on' },
+    appMixer: { name: 'Hand mixer', description: 'Slow on one resistor, fast with TURBO adding a second one' },
+    appToaster: { name: 'Toaster', description: 'Push the lever down and the heating coils glow red' },
+    appIron: { name: 'Steam iron', description: 'Heats the plate; only a hot iron makes steam' },
+    appOven: { name: 'Electric oven', description: 'Heats less as it warms up, with a fan and a light inside' },
+    appHeater: { name: 'Space heater', description: 'Warms the room, but switches off and beeps if it tips over' },
+    appSamovar: { name: 'Electric samovar', description: 'Heats only while there is water, so it never boils dry' },
+    appCoffee: { name: 'Coffee maker', description: 'Heat the water, pump it through the coffee, keep it warm' },
+    appDishwasher: { name: 'Dishwasher', description: 'Fill, spray with the pump, dry with the heater' },
+    appHumidifier: { name: 'Humidifier', description: 'Dry air starts the mist maker until the air is damp enough' },
+    appAirPurifier: { name: 'Air purifier', description: 'Dirtier air spins the fan faster; the phone shows the air' },
+    appDeskFan: { name: 'Desk fan', description: 'The knob sets the speed and a servo swings its head' },
+    appSewing: { name: 'Sewing machine', description: 'Press the pedal harder and it sews faster' },
   },
   gallery: {
     title: 'Examples',
@@ -1270,6 +1328,7 @@ export const en: Dictionary = {
       car: { name: 'Cars', short: 'Cars', blurb: 'The engine computer (ECU) and the networks inside a car.' },
       factory: { name: 'Factories', short: 'Factory', blurb: 'The PLC runs belts, pumps, presses and burners.' },
       oil: { name: 'Oil and gas', short: 'Oil', blurb: 'The RTU watches a far-away well and reports to the control room.' },
+      appliances: { name: 'Home appliances', short: 'Appliances', blurb: 'How a washing machine, a fridge, a microwave and other home machines work inside.' },
     },
     levels: { 1: 'Easy', 2: 'Medium', 3: 'Hard' },
     search: 'Find an example',
@@ -1632,9 +1691,12 @@ export const en: Dictionary = {
       probeLoose: 'No light: the tip touches nothing, or the voltage there is only half way.',
       beaconHint: 'This beacon has its resistor inside: join + to a board pin (or 5 V) and − to −.',
       beaconHot: 'Too many volts: it is getting hot! It is made for 5 V.',
+      heaterHint: 'It needs a strong current: let a transistor switch it from its own battery. A board pin alone is far too weak.',
+      heaterHot: 'Too much power: the coil is overheating! Use fewer volts.',
     },
     eyes: 'Eyes',
     camera: 'Camera',
+    heat: 'Heat',
     lookWith: 'Look with',
     viewHint: 'Our eyes can’t see infrared light, but a phone camera can.',
     dial: 'Dial',

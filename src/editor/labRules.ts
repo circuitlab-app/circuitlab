@@ -36,6 +36,7 @@ const LAB_CONTROLS = new Set<PartType>([
   'canBus',
   'rs485',
   'beacon',
+  'heater',
 ])
 
 export const hasLabControl = (type: PartType) => LAB_CONTROLS.has(type)
@@ -50,6 +51,9 @@ export function labGlow(data: PartData, result?: PartResult): string | null {
       return data.camera ? '#c084fc' : null
     case 'beacon':
       return LED_COLORS[(data.color as LedColor) ?? 'orange'] ?? LED_COLORS.orange
+    case 'heater':
+      // the warm orange of a glowing coil
+      return '#ff6a1a'
     case 'trafficLight': {
       const c = result?.channels
       if (!c) return null
@@ -159,6 +163,9 @@ export function labTip(data: PartData, result: PartResult, status: PartStatus, t
       if (status === 'idle') return info(lab.meterOhms)
       return dial === 'beep' && result.channels?.beep === 1 ? info(lab.meterBeep) : null
     }
+    case 'heater':
+      if (status === 'over') return warn(lab.heaterHot)
+      return status === 'idle' || status === 'weak' ? info(lab.heaterHint) : null
     case 'beacon':
       if (status === 'reverse') return warn(t.tips.ledReverse)
       if (status === 'over') return warn(lab.beaconHot)
@@ -199,4 +206,5 @@ export const LAB_WITHOUT_SETTINGS: readonly PartType[] = [
   'gps',
   'canBus',
   'rs485',
+  'heater',
 ]

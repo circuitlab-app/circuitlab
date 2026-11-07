@@ -6,6 +6,7 @@ import { Dialog as DialogPrimitive } from "@animate-ui/react/primitives/radix-ui
 
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
+import { useSettledModal } from "@/components/ui/use-settled-modal"
 
 function Dialog({
   ...props
@@ -55,10 +56,12 @@ function DialogContent({
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
 }) {
+  const settled = useSettledModal<HTMLDivElement>()
   return (
     <DialogPortal>
       <DialogOverlay />
       <DialogPrimitive.Content
+        ref={settled}
         data-slot="dialog-content"
         className={cn(
           "fixed top-1/2 start-1/2 z-50 grid w-full max-w-[calc(100%-2rem)] -translate-x-1/2 rtl:translate-x-1/2 -translate-y-1/2 gap-4 rounded-xl bg-popover p-4 text-sm text-popover-foreground ring-1 ring-foreground/10 outline-none sm:max-w-sm",

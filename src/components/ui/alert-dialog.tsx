@@ -3,6 +3,7 @@ import { cn } from "cn"
 import { AlertDialog as AlertDialogPrimitive } from "@animate-ui/react/primitives/radix-ui"
 
 import { Button } from "@/components/ui/button"
+import { useSettledModal } from "@/components/ui/use-settled-modal"
 
 function AlertDialog({
   ...props
@@ -49,10 +50,12 @@ function AlertDialogContent({
 }: React.ComponentProps<typeof AlertDialogPrimitive.Content> & {
   size?: "default" | "sm"
 }) {
+  const settled = useSettledModal<HTMLDivElement>()
   return (
     <AlertDialogPortal>
       <AlertDialogOverlay />
       <AlertDialogPrimitive.Content
+        ref={settled}
         data-slot="alert-dialog-content"
         data-size={size}
         className={cn(

@@ -1883,6 +1883,256 @@ function Rtu({ id }: ArtProps) {
   )
 }
 
+/* ---- bare microcontroller boards ---- */
+
+/**
+ * A DIP chip seen from above: a row of silver legs down each long side, the
+ * pin-1 notch in its left end and a dot by pin 1. With `socket`, the ends of
+ * its socket show past the chip; the legs stay on the board so the chip keeps
+ * its comb-legged outline even when drawn tiny.
+ */
+function Dip({ x, y, w, h, n, notch, socket = false }: { x: number; y: number; w: number; h: number; n: number; notch: string; socket?: boolean }) {
+  const pitch = (w - 2.4) / (n - 1)
+  const leg = round(Math.min(1.6, pitch * 0.6))
+  const r = round(Math.min(1.5, h * 0.18))
+  const cy = round(y + (h - 0.7) / 2)
+  return (
+    <>
+      {socket && (
+        <>
+          <rect x={x - 1.5} y={y + 0.2} width={w + 3} height={h + 0.6} rx="0.5" fill="#09090b" />
+          <rect x={x - 1.5} y={y + 0.2} width={w + 3} height={h - 0.2} rx="0.5" fill="#52525b" />
+        </>
+      )}
+      {Array.from({ length: n }, (_, i) => {
+        const lx = round(x + 1.2 + i * pitch - leg / 2)
+        return (
+          <g key={i}>
+            <rect x={lx} y={y - 1.6} width={leg} height="2.2" rx="0.25" fill="#e4e4e7" />
+            <rect x={lx} y={y + h - 0.8} width={leg} height="2.2" rx="0.25" fill="#d4d4d8" />
+            <rect x={lx} y={y + h + 0.6} width={leg} height="0.8" rx="0.25" fill="#a1a1aa" />
+          </g>
+        )
+      })}
+      <Chip x={x} y={y} w={w} h={h} />
+      <path d={`M${x} ${round(cy - r)}a${r} ${r} 0 0 1 0 ${round(2 * r)}z`} fill={notch} />
+      <circle cx={round(x + 1.2 + r * 0.6)} cy={round(y + h - 2)} r={round(Math.min(0.65, h * 0.08))} fill="#71717a" />
+    </>
+  )
+}
+
+/** The silver can of an HC-49 crystal, standing low on the board, seen from above. */
+function Crystal({ id, x, y, w, h }: ArtProps & { x: number; y: number; w: number; h: number }) {
+  const r = round(Math.min(w, h) / 2)
+  return (
+    <>
+      <rect x={x} y={y} width={w} height={h} rx={r} fill="#71717a" />
+      <rect x={x} y={y} width={w} height={round(h - 0.8)} rx={r} fill={`url(#${id}u)`} />
+      <rect x={round(x + 0.6)} y={round(y + 0.5)} width={round(w - 1.2)} height={round(h - 2)} rx={round(r - 0.5)} fill="none" stroke="#fff" strokeWidth="0.35" opacity="0.7" />
+    </>
+  )
+}
+
+/** A small tactile reset button seen from above. */
+function ResetButton({ x, y, cap = '#18181b' }: { x: number; y: number; cap?: string }) {
+  return (
+    <>
+      <rect x={x - 1.4} y={y - 1.4} width="2.8" height="3.2" rx="0.4" fill="#71717a" />
+      <rect x={x - 1.4} y={y - 1.4} width="2.8" height="2.7" rx="0.4" fill="#d4d4d8" />
+      <circle cx={x} cy={y - 0.1} r="0.9" fill={cap} />
+    </>
+  )
+}
+
+/** An ATmega328P on its own: the Uno's chip in a socket on a little green board. */
+function Atmega328({ id }: ArtProps) {
+  return (
+    <>
+      <defs>
+        <Silver id={id} />
+        <radialGradient id={`${id}c`} cx="0.35" cy="0.35" r="0.7">
+          <stop offset="0" stopColor="#93c5fd" />
+          <stop offset="1" stopColor="#1d4ed8" />
+        </radialGradient>
+      </defs>
+      <Shadow y={38.6} rx={20} />
+      <Pcb id={id} x={4} y={12.5} w={40} h={22.5} light="#34a866" dark="#14663a" edge="#0a3d21" />
+      <Holes x={9} y={14.7} n={13} step={2.5} />
+      <Holes x={9} y={32.9} n={13} step={2.5} />
+      {/* the 16 MHz crystal, its two little capacitors and the 10 µF one */}
+      <Crystal id={id} x={6.2} y={18.4} w={3} h={7.4} />
+      <circle cx="10.4" cy="18.6" r="0.9" fill="#c2410c" />
+      <circle cx="10.4" cy="25.6" r="0.9" fill="#c2410c" />
+      <circle cx="7.7" cy="29.3" r="1.9" fill="#1e3a8a" />
+      <circle cx="7.7" cy="29" r="1.75" fill={`url(#${id}c)`} />
+      <path d="M6.6 28.4a1.3 1.3 0 0 1 1.3-.9" fill="none" stroke="#fff" strokeWidth="0.4" opacity="0.7" />
+      {/* the chip in its socket */}
+      <Dip x={13.4} y={19.8} w={22.4} h={8.2} n={14} notch="#52525b" socket />
+      <rect x="18.2" y="22.2" width="10" height="0.7" rx="0.35" fill="#d4d4d8" opacity="0.5" />
+      <rect x="18.2" y="24" width="6.4" height="0.7" rx="0.35" fill="#d4d4d8" opacity="0.35" />
+      {/* the 6-pin header to program it, the reset button and the power light */}
+      <Header x={38.6} y={20.4} cols={2} rows={3} />
+      <ResetButton x={40} y={29} />
+      <Glow cx={39.8} cy={17.6} color="#ef4444" halo="#f87171" />
+    </>
+  )
+}
+
+/** An ATmega32 on a blue AVR teaching board: a 40-pin chip, its ports on long headers, its own power supply. */
+function Atmega32({ id }: ArtProps) {
+  return (
+    <>
+      <defs>
+        <Silver id={id} />
+        <linearGradient id={`${id}h`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#3f3f46" />
+          <stop offset="1" stopColor="#141417" />
+        </linearGradient>
+      </defs>
+      <Shadow y={41.2} rx={21} />
+      <Pcb id={id} x={3} y={10} w={42} h={28.4} light="#3b76d6" dark="#173c85" edge="#0c2252" holes={[[42.4, 12.6], [42.4, 35.8]]} />
+      {/* ports A and B along the back edge, C and D along the front */}
+      <Header x={11.4} y={11} cols={9} pin="#0a0a0a" />
+      <Header x={27.4} y={11} cols={9} pin="#0a0a0a" />
+      <Header x={11.4} y={34.2} cols={9} pin="#0a0a0a" />
+      <Header x={27.4} y={34.2} cols={9} pin="#0a0a0a" />
+      {/* the 8 MHz crystal between them, and the power light */}
+      <Crystal id={id} x={22.6} y={11.2} w={4.4} h={2.6} />
+      {/* the 7805 lying on the board: metal tab with its hole, black body, three legs */}
+      <rect x="4.8" y="12" width="5.6" height="4" rx="0.4" fill={`url(#${id}u)`} />
+      <circle cx="7.6" cy="13.8" r="0.9" fill="#0c2252" />
+      {[6, 7.6, 9.2].map((x) => (
+        <rect key={x} x={x - 0.4} y="20.4" width="0.8" height="2.6" fill="#d4d4d8" />
+      ))}
+      <Box x={4.6} y={15.4} w={6} h={5.6} top="#2a2a2e" front="#000" />
+      {/* the barrel jack for the power plug */}
+      <rect x="1.4" y="26.2" width="8.6" height="7.6" rx="0.8" fill="#000" />
+      <rect x="1.4" y="26.2" width="8.6" height="6.8" rx="0.8" fill={`url(#${id}h)`} />
+      <rect x="0.8" y="27.8" width="1.6" height="3.6" rx="0.4" fill="#27272a" />
+      <ellipse cx="6.2" cy="29.6" rx="1.8" ry="1.6" fill="#050505" />
+      <circle cx="6.2" cy="29.6" r="0.5" fill="#d4d4d8" />
+      {/* the 40-pin chip in its socket */}
+      <Dip x={12.4} y={20.4} w={25.4} h={8.6} n={20} notch="#52525b" socket />
+      <rect x="17.4" y="22.9" width="12" height="0.7" rx="0.35" fill="#d4d4d8" opacity="0.5" />
+      <rect x="17.4" y="24.7" width="7.6" height="0.7" rx="0.35" fill="#d4d4d8" opacity="0.35" />
+      {/* the 10-pin plug to program it, in its box with a key slot */}
+      <rect x="39.4" y="17.4" width="5.2" height="13.8" rx="0.5" fill="#000" />
+      <rect x="39.4" y="17.4" width="5.2" height="13" rx="0.5" fill="#2a2a2e" />
+      <rect x="40.3" y="18.3" width="3.4" height="11.2" rx="0.3" fill="#0a0a0a" />
+      <rect x="43.7" y="22.4" width="0.9" height="2.6" fill="#173c85" />
+      {Array.from({ length: 10 }, (_, i) => (
+        <rect key={i} x={i % 2 ? 42.3 : 40.9} y={18.9 + Math.floor(i / 2) * 2.1} width="0.8" height="0.8" fill="#eab308" />
+      ))}
+      <ResetButton x={36.6} y={14.6} cap="#dc2626" />
+      <Glow cx={40.6} cy={14} color="#22c55e" halo="#4ade80" />
+    </>
+  )
+}
+
+/** An ATtiny85 on a tiny board that plugs straight into a USB port. */
+function Attiny85({ id }: ArtProps) {
+  const pins = [21.2, 23.8, 26.4, 29, 31.6, 34.2]
+  return (
+    <>
+      <defs>
+        <Silver id={id} />
+        <linearGradient id={`${id}t`} x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#9b6cf0" />
+          <stop offset="1" stopColor="#5b25ad" />
+        </linearGradient>
+        <linearGradient id={`${id}g`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#fde68a" />
+          <stop offset="1" stopColor="#ca8a04" />
+        </linearGradient>
+      </defs>
+      <Shadow y={39.4} rx={20} />
+      {/* the USB plug is the board itself: a tongue with four gold fingers */}
+      <rect x="2.4" y="18.4" width="15" height="12.4" rx="1" fill="#2e1065" />
+      <rect x="2.4" y="16.8" width="15" height="12.4" rx="1" fill={`url(#${id}t)`} />
+      <rect x="3.6" y="18" width="7.2" height="1.7" rx="0.4" fill={`url(#${id}g)`} />
+      <rect x="4.8" y="20.9" width="6" height="1.7" rx="0.4" fill={`url(#${id}g)`} />
+      <rect x="4.8" y="23.4" width="6" height="1.7" rx="0.4" fill={`url(#${id}g)`} />
+      <rect x="3.6" y="26.3" width="7.2" height="1.7" rx="0.4" fill={`url(#${id}g)`} />
+      <Pcb id={id} x={14} y={10} w={31.4} h={26.4} light="#9061e6" dark="#4c1d95" edge="#2e1065" />
+      {/* the 78M05 regulator: silver tab behind, black body, two legs */}
+      <rect x="16.8" y="12.2" width="5.6" height="3" rx="0.4" fill={`url(#${id}u)`} />
+      <rect x="17.8" y="19.2" width="0.9" height="1.6" fill="#d4d4d8" />
+      <rect x="20.5" y="19.2" width="0.9" height="1.6" fill="#d4d4d8" />
+      <Box x={16.6} y={14.2} w={6} h={5.6} top="#2a2a2e" front="#000" />
+      <rect x="17.2" y="22.6" width="1.4" height="2.2" rx="0.3" fill="#d6b48c" />
+      <rect x="19.8" y="22.6" width="1.4" height="2.2" rx="0.3" fill="#d6b48c" />
+      {/* the 8-pin chip in its socket */}
+      <Dip x={25.4} y={15} w={12.4} h={9} n={4} notch="#52525b" socket />
+      <rect x="29.4" y="17.6" width="5.6" height="0.8" rx="0.4" fill="#d4d4d8" opacity="0.5" />
+      <rect x="29.4" y="19.6" width="3.6" height="0.8" rx="0.4" fill="#d4d4d8" opacity="0.35" />
+      {/* P0 … P5 along the front, 5V GND VIN up the right edge */}
+      <rect x="19.8" y="31.2" width="15.8" height="3.6" rx="0.4" fill="#0a0a0a" />
+      <rect x="19.8" y="31.2" width="15.8" height="2.8" rx="0.4" fill="#2a2a2e" />
+      {pins.map((x) => (
+        <rect key={x} x={x - 0.5} y="32.1" width="1" height="1" fill="#eab308" />
+      ))}
+      <rect x="40.8" y="12" width="2.8" height="9.2" rx="0.4" fill="#0a0a0a" />
+      <rect x="40.8" y="12" width="2.8" height="8.4" rx="0.4" fill="#2a2a2e" />
+      {[13.6, 16.2, 18.8].map((y) => (
+        <rect key={y} x="41.7" y={y - 0.5} width="1" height="1" fill="#eab308" />
+      ))}
+      <Glow cx={42.2} cy={25.4} color="#22c55e" halo="#4ade80" />
+      <Glow cx={23.8} cy={28.6} color="#f59e0b" halo="#fcd34d" />
+    </>
+  )
+}
+
+/** The STM32 "Blue Pill": a long blue board with a fast square chip set corner-up. */
+function Stm32({ id }: ArtProps) {
+  return (
+    <>
+      <defs>
+        <Silver id={id} />
+        <linearGradient id={`${id}y`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#fde047" />
+          <stop offset="1" stopColor="#ca8a04" />
+        </linearGradient>
+      </defs>
+      <Shadow y={37.6} rx={21} />
+      <Pcb id={id} x={4} y={15.6} w={40.6} h={16.6} light="#4277f0" dark="#1c3eb0" edge="#0f1f5c" />
+      <Holes x={6.2} y={17.4} n={20} step={1.95} />
+      <Holes x={6.2} y={30.4} n={20} step={1.95} />
+      <Box x={1.6} y={20.8} w={6.2} h={6} top={`url(#${id}u)`} front="#71717a" />
+      <path d="M3.2 23h3M3.2 24.4h3" stroke="#a1a1aa" strokeWidth="0.45" />
+      <ResetButton x={10.6} y={21.6} />
+      {/* BOOT0 and BOOT1: yellow jumper blocks, a black cap over two pins of each */}
+      {[13.8, 16.6].map((x) => (
+        <g key={x}>
+          <rect x={x - 1.1} y="19.8" width="2.2" height="8.6" rx="0.4" fill="#a16207" />
+          <rect x={x - 1.1} y="19.8" width="2.2" height="8" rx="0.4" fill={`url(#${id}y)`} />
+          <rect x={x - 0.45} y="25.4" width="0.9" height="0.9" fill="#52525b" />
+          <rect x={x - 1.2} y="19.2" width="2.4" height="4.6" rx="0.4" fill="#000" />
+          <rect x={x - 1.2} y="19.2" width="2.4" height="4" rx="0.4" fill="#27272a" />
+          <rect x={x - 0.7} y="19.6" width="1.4" height="0.4" rx="0.2" fill="#fff" opacity="0.2" />
+        </g>
+      ))}
+      {/* the chip with legs on all four sides, set corner-up */}
+      <g transform="rotate(45 25.6 24)">
+        <rect x="22.2" y="20.6" width="6.8" height="6.8" fill="#a1a1aa" />
+        <rect x="22.8" y="21.2" width="5.6" height="5.6" rx="0.3" fill="#27272a" />
+        <rect x="23.2" y="21.6" width="4.8" height="0.5" rx="0.25" fill="#fff" opacity="0.15" />
+        <circle cx="23.8" cy="22.7" r="0.45" fill="#52525b" />
+      </g>
+      {/* the 8 MHz and 32.768 kHz crystals, the power and PC13 lights, the programming header */}
+      <Crystal id={id} x={31} y={26.2} w={5.6} h={2.8} />
+      <rect x="31.6" y="20" width="4.4" height="1.8" rx="0.9" fill="#71717a" />
+      <rect x="31.6" y="20" width="4.4" height="1.5" rx="0.75" fill={`url(#${id}u)`} />
+      <Glow cx={38.6} cy={21.2} color="#ef4444" halo="#f87171" />
+      <rect x="38" y="26.6" width="1.2" height="1.4" rx="0.3" fill="#bbf7d0" />
+      <rect x="40.8" y="19.8" width="2.8" height="8.2" rx="0.4" fill="#0a0a0a" />
+      <rect x="40.8" y="19.8" width="2.8" height="7.4" rx="0.4" fill="#2a2a2e" />
+      {[21, 22.8, 24.6, 26.4].map((y) => (
+        <rect key={y} x="41.7" y={y - 0.5} width="1" height="1" fill="#eab308" />
+      ))}
+    </>
+  )
+}
+
 /* ---- screens ---- */
 
 const round = (n: number) => +n.toFixed(2)
@@ -3912,6 +4162,91 @@ function Fan({ id }: ArtProps) {
   )
 }
 
+/** where each turn of the heater's coil crosses the front of its rod */
+const HEATER_TURNS = Array.from({ length: 13 }, (_, i) => round(10.4 + i * 2.2))
+
+/** A heating element: glowing wire wound on a white ceramic rod, held by two metal brackets on a ceramic base. */
+function Heater({ id }: ArtProps) {
+  return (
+    <>
+      <defs>
+        <Silver id={id} />
+        <linearGradient id={`${id}c`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#ffffff" />
+          <stop offset="1" stopColor="#e9e3d8" />
+        </linearGradient>
+        <linearGradient id={`${id}r`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="#fffaf3" />
+          <stop offset="0.55" stopColor="#fbe3cc" />
+          <stop offset="1" stopColor="#e2a982" />
+        </linearGradient>
+        <linearGradient id={`${id}w`} x1="0" y1="18" x2="0" y2="26" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#fde68a" />
+          <stop offset="0.45" stopColor="#fb923c" />
+          <stop offset="1" stopColor="#dc2626" />
+        </linearGradient>
+        <radialGradient id={`${id}g`}>
+          <stop offset="0" stopColor="#fb923c" stopOpacity="0.7" />
+          <stop offset="1" stopColor="#fb923c" stopOpacity="0" />
+        </radialGradient>
+      </defs>
+      <Shadow y={40} rx={20} />
+      <g transform="translate(0 1.6)">
+        {/* the ceramic base, and the screw lugs (its two terminals) sticking out of its ends */}
+        <rect x="5" y="27.6" width="38" height="7.2" rx="1.6" fill="#c9c1b3" />
+        <rect x="5" y="26" width="38" height="7.2" rx="1.6" fill={`url(#${id}c)`} />
+        <rect x="7" y="26.5" width="34" height="0.7" rx="0.35" fill="#fff" />
+        {[
+          [1.6, 10.6],
+          [37.4, 46.4],
+        ].map(([x0, x1]) => (
+          <g key={x0}>
+            <rect x={x0} y="28.4" width={x1 - x0} height="3.4" rx="0.6" fill="#8b8b94" />
+            <rect x={x0} y="28.4" width={x1 - x0} height="2.8" rx="0.6" fill={`url(#${id}u)`} />
+          </g>
+        ))}
+        {[4, 44].map((cx) => (
+          <g key={cx}>
+            <circle cx={cx} cy="29.8" r="1.25" fill="#a1a1aa" />
+            <circle cx={cx} cy="29.6" r="1.05" fill="#e4e4e7" />
+            <path d={`M${cx - 0.7} 30.1l1.4-0.9`} stroke="#52525b" strokeWidth="0.4" strokeLinecap="round" />
+          </g>
+        ))}
+        {/* heat rising off the coil */}
+        <g fill="none" stroke="#fb923c" strokeWidth="0.9" strokeLinecap="round" opacity="0.6">
+          <path d="M17 13.6c-1.6-1.7 1.6-3 0-4.8s1.6-3 0-4.6" />
+          <path d="M24 13c-1.6-1.7 1.6-3 0-4.8s1.6-3 0-4.6" />
+          <path d="M31 13.6c-1.6-1.7 1.6-3 0-4.8s1.6-3 0-4.6" />
+        </g>
+        <ellipse cx="24" cy="22" rx="19" ry="7" fill={`url(#${id}g)`} />
+        {/* the back half of each turn, behind the rod */}
+        <g fill="none" stroke="#9a2a0c" strokeWidth="1" strokeLinecap="round">
+          {HEATER_TURNS.map((x) => (
+            <path key={x} d={`M${round(x + 1.1)} 25.4L${round(x + 2.2)} 18.6`} />
+          ))}
+        </g>
+        {/* the ceramic rod, running through the two brackets */}
+        <rect x="8.4" y="19.4" width="31.2" height="5.2" rx="2.6" fill={`url(#${id}r)`} />
+        {[9, 39].map((x) => (
+          <g key={x}>
+            <rect x={x - 1.1} y="15.6" width="2.2" height="13.4" rx="0.5" fill="#8b8b94" />
+            <rect x={x - 1.1} y="15.6" width="2.2" height="12.8" rx="0.5" fill={`url(#${id}u)`} />
+            <circle cx={x} cy="22" r="1.5" fill="#a1a1aa" />
+            <circle cx={x - 0.3} cy="21.7" r="0.6" fill="#fff" opacity="0.7" />
+          </g>
+        ))}
+        {/* the glowing front of each turn, and the wire's ends running to the brackets */}
+        <g fill="none" stroke={`url(#${id}w)`} strokeWidth="1.15" strokeLinecap="round">
+          {HEATER_TURNS.map((x) => (
+            <path key={x} d={`M${x} 18.6Q${round(x + 1.3)} 22 ${round(x + 1.1)} 25.4`} />
+          ))}
+          <path d="M10.1 18.6h-0.4M39.7 18.6h-1.2" />
+        </g>
+      </g>
+    </>
+  )
+}
+
 /** DIP pins along the top and bottom edges of a chip seen from above. */
 function ChipPins({ x, y, h, n, pitch }: { x: number; y: number; h: number; n: number; pitch: number }) {
   return (
@@ -4824,6 +5159,7 @@ const ART: Record<PartType, (p: ArtProps) => ReactNode> = {
   trafficLight: TrafficLight,
   beacon: Beacon,
   fan: Fan,
+  heater: Heater,
   nandGate: NandGate,
   norGate: NorGate,
   latch: Latch,
@@ -4835,6 +5171,10 @@ const ART: Record<PartType, (p: ArtProps) => ReactNode> = {
   ecu: Ecu,
   plc: Plc,
   rtu: Rtu,
+  atmega328: Atmega328,
+  atmega32: Atmega32,
+  attiny85: Attiny85,
+  stm32: Stm32,
   gsm: Gsm,
   wifi: Wifi,
   bluetooth: Bluetooth,

@@ -42,6 +42,7 @@ export const DEVICE_TYPES = [
   'canBus',
   'rs485',
   'beacon',
+  'heater',
 ] as const satisfies readonly PartType[]
 
 export type DeviceType = (typeof DEVICE_TYPES)[number]
@@ -411,6 +412,16 @@ const pump = (ctx: DeviceContext) =>
       result.level = speed
       result.status = speed > P.overSpeed ? 'over' : speed < 0.5 ? 'weak' : 'on'
     } else if (speed > 0.04) result.status = 'weak'
+  })
+
+/** The heating element: a resistor that glows hotter the more power it takes, either way round. */
+const heater = (ctx: DeviceContext) =>
+  coilDevice(ctx, E.heater.resistance, (result) => {
+    const H = E.heater
+    const watts = Math.abs(result.power)
+    if (watts < 0.05) return
+    result.level = Math.min(1.4, watts / H.ratedPower)
+    result.status = watts > H.hotPower ? 'over' : watts >= H.warmPower ? 'on' : 'weak'
   })
 
 const bell = (ctx: DeviceContext) =>
@@ -1010,6 +1021,7 @@ const FACTORIES: Record<DeviceType, (ctx: DeviceContext) => Device> = {
   canBus: radio,
   rs485: radio,
   beacon,
+  heater,
 }
 
 /** The device for a part, or null when the solver handles the part itself. */

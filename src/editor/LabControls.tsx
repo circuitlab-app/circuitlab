@@ -1,4 +1,4 @@
-import { BellRing, Camera, Droplets, Eye, Fan, MoveRight, RotateCcw, RotateCw, Square, Volume2 } from 'lucide-react'
+import { BellRing, Camera, Droplets, Eye, Fan, Flame, MoveRight, RotateCcw, RotateCw, Square, Volume2 } from 'lucide-react'
 import { motion } from 'motion/react'
 import type { ReactNode } from 'react'
 import { COUNTER_OUTPUTS, METER_DIALS } from '@/circuit/catalog'
@@ -393,6 +393,8 @@ export function LabControl({ id, data, result }: { id: string; data: PartData; r
       return <MeterControl id={id} data={data} result={result} />
     case 'logicProbe':
       return <ProbeRow channels={result?.channels} label={label} />
+    case 'heater':
+      return <LevelRow fraction={level} text={`${Math.abs(result?.power ?? 0).toFixed(1)} ${t.units.watt}`} label={t.lab.heat} icon={icon(Flame)} />
     case 'beacon':
       return <LevelRow fraction={level / 1.1} text={percent(level / 1.1)} label={t.inspector.brightness} icon={icon(RotateCw)} />
     case 'gsm':

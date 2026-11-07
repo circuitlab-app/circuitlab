@@ -52,6 +52,7 @@ import { PumpModel } from './models/Pump'
 import { SolenoidModel } from './models/Solenoid'
 import { TrafficLightModel } from './models/TrafficLight'
 import { BeaconModel } from './models/Beacon'
+import { HeaterModel } from './models/Heater'
 import { ZenerModel } from './models/Zener'
 import { AiBoardModel } from './models/AiBoard'
 import { CoinCellModel, DynamoModel, LemonModel, PowerBankModel } from './models/Cells'
@@ -138,6 +139,7 @@ const FRAMING = {
   trafficLight: { camera: [0, 0.4, 4.6], scale: 1.04, lift: 0 },
   beacon: { camera: [0, 1.0, 4.4], scale: 0.9, lift: -0.12 },
   fan: { camera: [0, 0.4, 4.6], scale: 1, lift: 0 },
+  heater: { camera: [0, 0.4, 4.6], scale: 1, lift: -0.05 },
   latch: { camera: [0, 0.4, 4.6], scale: 0.9, lift: 0 },
   counter: { camera: [0, 0.4, 4.6], scale: 0.9, lift: 0 },
   comparator: { camera: [0, 0.4, 4.6], scale: 0.9, lift: 0 },
@@ -268,6 +270,10 @@ export function PartScene({
     case 'ecu':
     case 'plc':
     case 'rtu':
+    case 'atmega328':
+    case 'atmega32':
+    case 'attiny85':
+    case 'stm32':
       return (
         <Stage {...FRAMING.arduino}>
           <BoardModel
@@ -537,6 +543,12 @@ export function PartScene({
       return (
         <Stage {...FRAMING.fan}>
           <FanModel speed={level} hot={status === 'over'} />
+        </Stage>
+      )
+    case 'heater':
+      return (
+        <Stage {...FRAMING.heater}>
+          <HeaterModel level={level} over={status === 'over'} />
         </Stage>
       )
     case 'latch':

@@ -329,7 +329,11 @@ export function solveCircuit(parts: NetPart[], wires: NetWire[], options: SolveO
       case 'aiBoard':
       case 'ecu':
       case 'plc':
-      case 'rtu': {
+      case 'rtu':
+      case 'atmega328':
+      case 'atmega32':
+      case 'attiny85':
+      case 'stm32': {
         hasBattery = true
         const spec = BOARDS[data.type]
         const gnd = node(id, 'GND')
@@ -811,7 +815,11 @@ export function solveCircuit(parts: NetPart[], wires: NetWire[], options: SolveO
       case 'aiBoard':
       case 'ecu':
       case 'plc':
-      case 'rtu': {
+      case 'rtu':
+      case 'atmega328':
+      case 'atmega32':
+      case 'attiny85':
+      case 'stm32': {
         const spec = BOARDS[data.type]
         const levels = pinLevels.get(id) ?? {}
         const gnd = v(id, 'GND')

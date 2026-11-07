@@ -1,6 +1,159 @@
 import { BOARDS, SENSOR_MODES, type BoardType } from './catalog'
 import type { PinMode } from './types'
 
+/**
+ * What AVR C needs to know about each AVR chip: its clock, the timer that
+ * makes PWM on each PWM pin (its compare register and the lines that start
+ * it), and the lines that switch on its analog-to-digital converter.
+ */
+type AvrChip = {
+  name: string
+  clock: string
+  pwm: Record<string, { ocr: string; setup: string[] }>
+  adc: string[]
+}
+
+const timer1 = (channel: 'A' | 'B', pin: string) => ({
+  ocr: `OCR1${channel}`,
+  setup: [
+    `TCCR1A |= (1 << COM1${channel}1) | (1 << WGM10);  // Timer1: 8-bit fast PWM on OC1${channel} (${pin})`,
+    'TCCR1B |= (1 << WGM12) | (1 << CS11);',
+  ],
+})
+
+const AVR_CHIPS: Record<'atmega328' | 'atmega32' | 'attiny85', AvrChip> = {
+  atmega328: {
+    name: 'ATmega328P',
+    clock: '16000000UL',
+    pwm: {
+      PB1: timer1('A', 'PB1'),
+      PB2: timer1('B', 'PB2'),
+      PB3: {
+        ocr: 'OCR2A',
+        setup: ['TCCR2A |= (1 << COM2A1) | (1 << WGM21) | (1 << WGM20);  // Timer2: fast PWM on OC2A (PB3)', 'TCCR2B |= (1 << CS21);'],
+      },
+    },
+    adc: [
+      'ADMUX = (1 << REFS0);  // read ADC0 (PC0), measured against AVCC (5 V)',
+      'ADCSRA = (1 << ADEN) | (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);  // ADC on, clock / 128',
+    ],
+  },
+  atmega32: {
+    name: 'ATmega32 (or ATmega16)',
+    clock: '8000000UL',
+    pwm: {
+      PB3: { ocr: 'OCR0', setup: ['TCCR0 |= (1 << WGM00) | (1 << WGM01) | (1 << COM01) | (1 << CS01);  // Timer0: fast PWM on OC0 (PB3)'] },
+      PD4: timer1('B', 'PD4'),
+      PD5: timer1('A', 'PD5'),
+    },
+    adc: [
+      'ADMUX = (1 << REFS0);  // read ADC0 (PA0), measured against AVCC (5 V)',
+      'ADCSRA = (1 << ADEN) | (1 << ADPS2) | (1 << ADPS1);  // ADC on, clock / 64',
+    ],
+  },
+  attiny85: {
+    name: 'ATtiny85',
+    clock: '8000000UL',
+    pwm: {
+      PB0: {
+        ocr: 'OCR0A',
+        setup: ['TCCR0A |= (1 << COM0A1) | (1 << WGM01) | (1 << WGM00);  // Timer0: fast PWM on OC0A (PB0)', 'TCCR0B |= (1 << CS01);'],
+      },
+      PB1: {
+        ocr: 'OCR0B',
+        setup: ['TCCR0A |= (1 << COM0B1) | (1 << WGM01) | (1 << WGM00);  // Timer0: fast PWM on OC0B (PB1)', 'TCCR0B |= (1 << CS01);'],
+      },
+      PB4: {
+        ocr: 'OCR1B',
+        setup: ['GTCCR |= (1 << PWM1B) | (1 << COM1B1);  // Timer1: PWM on OC1B (PB4)', 'OCR1C = 255;', 'TCCR1 |= (1 << CS12);'],
+      },
+    },
+    adc: [
+      'ADMUX = (1 << MUX1) | (1 << MUX0);  // read ADC3 (PB3), measured against VCC',
+      'ADCSRA = (1 << ADEN) | (1 << ADPS2) | (1 << ADPS1);  // ADC on, clock / 64',
+    ],
+  },
+}
+
+/**
+ * AVR C for a bare AVR chip, the way it is written with avr-gcc: each pin is
+ * a bit in its port's registers (DDRx sets it as an output, PORTx switches
+ * it), a PWM pin is driven by its timer's compare register, and the sensor is
+ * read with the ADC. A loop of 10 ms keeps the time.
+ */
+function avrCode(chip: AvrChip, pins: Record<string, PinMode>, used: string[], input: string, sensing: boolean): string {
+  const port = (p: string) => p[1]
+  const bit = (p: string) => p
+  const pwm = (p: string) => chip.pwm[p]
+  const mode = (p: string) => pins[p]
+  const has = (...modes: PinMode[]) => used.some((p) => modes.includes(mode(p)))
+  const lines = [
+    `// ${chip.name}`,
+    `#define F_CPU ${chip.clock}`,
+    '#include <avr/io.h>',
+    '#include <util/delay.h>',
+    '#include <stdint.h>',
+    '',
+    'int main(void) {',
+  ]
+  // the pins in use become outputs, port by port
+  const ports = [...new Set(used.map(port))]
+  for (const letter of ports) {
+    const bits = used.filter((p) => port(p) === letter).map((p) => `(1 << ${bit(p)})`)
+    lines.push(`    DDR${letter} |= ${bits.join(' | ')};  // outputs`)
+  }
+  if (used.length === 0) lines.push('    // every pin is off')
+  // each PWM pin's timer, every line once
+  const setup = [...new Set(used.filter((p) => pwm(p)).flatMap((p) => pwm(p).setup))]
+  for (const line of setup) lines.push(`    ${line}`)
+  if (sensing) for (const line of chip.adc) lines.push(`    ${line}`)
+  lines.push('    uint32_t ms = 0;  // time since the chip started', '', '    while (1) {')
+  if (sensing) {
+    lines.push(
+      '        ADCSRA |= (1 << ADSC);           // start reading the sensor',
+      '        while (ADCSRA & (1 << ADSC)) {}  // wait for the answer',
+      `        uint16_t reading = ADC;          // ${input}: 0 … 1023`,
+    )
+  }
+  if (has('blink', 'blink2')) lines.push('        uint8_t blink = (ms % 1000) < 500;')
+  if (has('step1', 'step2', 'step3')) lines.push('        uint8_t step = (ms / 1000) % 3;  // 0, 1, 2, 0, 1, 2 …')
+  if (has('fade')) {
+    lines.push(
+      '        uint16_t phase = ms % 2000;',
+      '        uint8_t level = phase < 1000 ? phase * 255UL / 1000 : (2000 - phase) * 255UL / 1000;  // up and down every 2 s',
+    )
+  }
+  if (has('alarm')) lines.push('        uint16_t beat = reading > 512 ? 600 - (uint32_t)(reading - 512) * 400 / 511 : 600;  // faster when higher')
+  /** a rule that is true or false: switches a plain pin, or sets a PWM pin fully on or off */
+  const rule = (p: string, test: string) => {
+    const timer = pwm(p)
+    if (timer) lines.push(`        ${timer.ocr} = (${test}) ? 255 : 0;`)
+    else lines.push(`        if (${test}) PORT${port(p)} |= (1 << ${bit(p)}); else PORT${port(p)} &= ~(1 << ${bit(p)});`)
+  }
+  /** a value 0 … 255 for a PWM pin */
+  const level = (p: string, value: string) => lines.push(`        ${pwm(p)!.ocr} = ${value};`)
+  for (const p of used) {
+    const m = mode(p)
+    if (m === 'on') {
+      if (pwm(p)) level(p, '255')
+      else lines.push(`        PORT${port(p)} |= (1 << ${bit(p)});  // always on`)
+    }
+    else if (m === 'blink') rule(p, 'blink')
+    else if (m === 'blink2') rule(p, '!blink')
+    else if (m === 'step1' || m === 'step2' || m === 'step3') rule(p, `step == ${Number(m.slice(4)) - 1}`)
+    else if (m === 'fade') level(p, 'level')
+    else if (m === 'follow') {
+      if (pwm(p)) level(p, 'reading / 4')
+      else rule(p, 'reading > 512')
+    } else if (m === 'invert') {
+      if (pwm(p)) level(p, '255 - reading / 4')
+      else rule(p, 'reading <= 512')
+    } else if (m === 'alarm') rule(p, 'reading > 512 && ms % beat < beat / 2')
+  }
+  lines.push('        _delay_ms(10);', '        ms += 10;', '    }', '}')
+  return lines.join('\n')
+}
+
 /** Raspberry Pi: the gpiozero call for each pin program … */
 const PI_PROGRAM: Partial<Record<PinMode, string>> = {
   on: 'on()',
@@ -18,8 +171,9 @@ const PI_START: Partial<Record<PinMode, number>> = { blink2: 0.5, step2: 1, step
 /**
  * The program a real board needs to do what its pins are set to, in the
  * language that board uses: Arduino C++ (also the car's ECU), MicroPython
- * (Pico, micro:bit), Python with gpiozero (Raspberry Pi) or IEC 61131-3
- * Structured Text (the factory PLC and the oil well's RTU). Real code kids can copy.
+ * (Pico, micro:bit), Python with gpiozero (Raspberry Pi), IEC 61131-3
+ * Structured Text (the factory PLC and the oil well's RTU) or register-level
+ * AVR C (the bare AVR chips). Real code kids can copy.
  */
 export function boardCode(type: BoardType, pins: Record<string, PinMode>): string {
   const spec = BOARDS[type]
@@ -181,5 +335,7 @@ export function boardCode(type: BoardType, pins: Record<string, PinMode>): strin
       lines.push('', 'END_PROGRAM')
       return lines.join('\n')
     }
+    case 'avr-c':
+      return avrCode(AVR_CHIPS[type as keyof typeof AVR_CHIPS], pins, used, input, sensing)
   }
 }

@@ -1039,5 +1039,50 @@ export const enLearn: LearnBook = {
       like: 'It is like a lighthouse that has shrunk to fit on a car roof.',
       fact: 'In oil fields and chemical plants, a flashing beacon and a horn together warn workers to put on their breathing masks and walk away from a gas leak.',
     },
+    atmega328: {
+      about: [
+        'The ATmega328P is an AVR microcontroller: a whole small computer on one chip, with memory, timers and an analog input. It is the chip inside the Arduino Uno.',
+        'In AVR C you set each pin through the chip\'s registers: DDRB makes a pin an output, PORTB switches it on and off, and a timer\'s OCR register sets how bright a PWM pin is.',
+        'It runs on 5 V. Each pin gives at most about 20 mA safely, so an LED always needs a resistor.',
+      ],
+      like: 'It is like the engine of a car taken out of the car: the same power, but now you can see and touch every part.',
+      fact: 'Billions of AVR chips are inside washing machines, toys, remote controls and cars, quietly doing their job for years.',
+    },
+    atmega32: {
+      about: [
+        'The ATmega32 is a bigger AVR chip with 40 legs and four ports called A, B, C and D, each with eight pins. The ATmega16 has the very same pins.',
+        'Port A can read analog sensors, and pins PB3, PD4 and PD5 can make PWM with the chip\'s timers. You program it in AVR C, for example with avr-gcc or CodeVisionAVR.',
+        'It works on 5 V and, like every chip, needs a resistor in front of each LED.',
+      ],
+      like: 'It is like a big school building with four corridors (the ports), and every classroom door (pin) has its own number.',
+      fact: 'For many years the ATmega32 and the ATmega16 have been the first microcontrollers that electronics students in many countries learn to program.',
+    },
+    attiny85: {
+      about: [
+        'The ATtiny85 is a very small AVR chip with only 8 legs: two for power, one for reset, and five that can be used.',
+        'Here PB3 reads a sensor and PB0, PB1, PB2 and PB4 drive the outputs. PB0, PB1 and PB4 can dim lights and slow motors with PWM.',
+        'Even so small, it has a timer, an analog input and enough memory to run a whole kettle, a fan or a toy.',
+      ],
+      like: 'It is like a pocket knife: tiny, but it still has every tool you need.',
+      fact: 'Some ATtiny chips are so small and cheap that they are built into greeting cards that play a song when you open them.',
+    },
+    stm32: {
+      about: [
+        'The STM32 Blue Pill has an ARM Cortex-M3 chip that runs at 72 MHz, several times faster than an Arduino Uno.',
+        'Its pins use 3.3 V, and its analog input reads the voltage as a number from 0 to 4095 (12 bits), four times finer than an AVR.',
+        'Here it is programmed with the Arduino language (STM32duino), so the same code style works on it. Never put 5 V straight into a pin that is not marked as 5 V tolerant.',
+      ],
+      like: 'It is like trading a bicycle for a motorbike: the same roads, but much faster and with more gears.',
+      fact: 'STM32 chips are inside drones, 3D printers, smart watches and electric scooters.',
+    },
+    heater: {
+      about: [
+        'A heating element is a coil of special wire (nichrome) that gets very hot when current flows through it, without melting.',
+        'The more power it takes, the hotter it gets: first warm, then glowing dark red, then bright orange. That is how toasters, irons, ovens and kettles heat.',
+        'It needs a big current, much more than a board pin can give. A board switches it through a transistor or a relay, and a thermostat stops it from getting too hot.',
+      ],
+      like: 'It is like a hand-rubbing warm-up: the harder the electricity pushes through the thin wire, the warmer it gets.',
+      fact: 'The wire in a toaster glows at about 600 °C, but it is made of nickel and chromium so it does not burn through, even after years of breakfasts.',
+    },
   },
 }

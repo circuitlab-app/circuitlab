@@ -21,6 +21,10 @@ const NEW_PARTS: PartType[] = [
   'ecu',
   'plc',
   'rtu',
+  'atmega328',
+  'atmega32',
+  'attiny85',
+  'stm32',
   'gsm',
   'wifi',
   'bluetooth',
@@ -30,6 +34,7 @@ const NEW_PARTS: PartType[] = [
   'rs485',
   'pressureSensor',
   'beacon',
+  'heater',
 ]
 
 const part = (id: string, type: PartType, extra: Partial<PartData> = {}): NetPart => ({
@@ -131,7 +136,7 @@ describe('the boards from the real world', () => {
   })
 
   it('lights an LED on every output through 220 Ω without overloading a pin', () => {
-    for (const type of ['ecu', 'plc', 'rtu'] as const) {
+    for (const type of ['ecu', 'plc', 'rtu', 'atmega328', 'atmega32', 'attiny85', 'stm32'] as const) {
       const pins = BOARDS[type].pins
       const parts = [
         part('board', type, { pins: Object.fromEntries(pins.map((p) => [p, 'on' as PinMode])) }),
@@ -168,6 +173,36 @@ describe('the boards from the real world', () => {
     expect(code).toContain('AO2 := 4095 - AI1;')
     expect(code).toContain('DO1 := AI1 <= 2048;')
     expect(boardCode('plc', {})).toContain('(* every output is off *)')
+  })
+
+  it('writes AVR C for the bare AVR chips: ports, timers and the ADC by their registers', () => {
+    const mega = boardCode('atmega328', { PB1: 'follow', PB5: 'blink', PB0: 'alarm' })
+    expect(mega).toContain('#define F_CPU 16000000UL')
+    expect(mega).toContain('DDRB |= (1 << PB0) | (1 << PB1) | (1 << PB5);')
+    expect(mega).toContain('TCCR1A |= (1 << COM1A1) | (1 << WGM10);')
+    expect(mega).toContain('ADMUX = (1 << REFS0);')
+    expect(mega).toContain('OCR1A = reading / 4;')
+    expect(mega).toContain('if (blink) PORTB |= (1 << PB5); else PORTB &= ~(1 << PB5);')
+    expect(mega).toContain('_delay_ms(10);')
+    const mega32 = boardCode('atmega32', { PB0: 'on', PD5: 'fade' })
+    expect(mega32).toContain('DDRB |= (1 << PB0);')
+    expect(mega32).toContain('DDRD |= (1 << PD5);')
+    expect(mega32).toContain('OCR1A = level;')
+    expect(mega32).toContain('PORTB |= (1 << PB0);  // always on')
+    expect(mega32).not.toContain('ADMUX')
+    const tiny = boardCode('attiny85', { PB4: 'invert', PB2: 'step2' })
+    expect(tiny).toContain('#define F_CPU 8000000UL')
+    expect(tiny).toContain('GTCCR |= (1 << PWM1B) | (1 << COM1B1);')
+    expect(tiny).toContain('ADMUX = (1 << MUX1) | (1 << MUX0);')
+    expect(tiny).toContain('OCR1B = 255 - reading / 4;')
+    expect(tiny).toContain('if (step == 1) PORTB |= (1 << PB2); else PORTB &= ~(1 << PB2);')
+  })
+
+  it('gives the ATtiny85 four outputs and the STM32 3.3 V with a 12-bit input', () => {
+    expect(BOARDS.attiny85.pins).toHaveLength(4)
+    expect(BOARDS.attiny85.input).toBe('PB3')
+    expect(BOARDS.stm32.voltage).toBe(3.3)
+    expect(boardCode('stm32', { PA8: 'follow' })).toContain('analogRead(PA0);  // 0 … 4095')
   })
 
   it('writes Arduino-style C for the ECU', () => {
@@ -289,6 +324,22 @@ describe('the warning beacon', () => {
     expect(lit(12).status).toBe('over')
     expect(lit(1.5).level).toBe(0)
     expect(lit(4.5, true).status).toBe('reverse')
+  })
+})
+
+describe('the heating element', () => {
+  const heat = (volts: number) => {
+    const parts = [part('bat', 'battery', { voltage: volts }), part('h', 'heater')]
+    return solveCircuit(parts, join(['bat:a', 'h:a'], ['h:b', 'bat:b'])).parts.h
+  }
+
+  it('glows more with more power, works either way round, and overheats on 9 V', () => {
+    expect(heat(1.5).status).toBe('weak')
+    expect(heat(4.5).status).toBe('on')
+    expect(heat(4.5).level).toBeGreaterThan(heat(3).level)
+    expect(heat(9).status).toBe('over')
+    const backwards = solveCircuit([part('bat', 'battery', { voltage: 4.5 }), part('h', 'heater')], join(['bat:a', 'h:b'], ['h:a', 'bat:b']))
+    expect(backwards.parts.h.status).toBe('on')
   })
 })
 

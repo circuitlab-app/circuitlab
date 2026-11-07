@@ -165,6 +165,10 @@ function tipFor(data: PartData, result: PartResult | undefined, status: PartStat
     case 'ecu':
     case 'plc':
     case 'rtu':
+    case 'atmega328':
+    case 'atmega32':
+    case 'attiny85':
+    case 'stm32':
       if (status === 'over') return { text: t.tips.arduinoPin, tone: 'warn' }
       return Object.values(data.pins ?? {}).some((mode) => SENSOR_MODES.includes(mode))
         ? { text: t.tips.followHint, tone: 'info' }
@@ -476,6 +480,10 @@ function PartSettings({ node }: { node: SelectedPart }) {
     case 'ecu':
     case 'plc':
     case 'rtu':
+    case 'atmega328':
+    case 'atmega32':
+    case 'attiny85':
+    case 'stm32':
       return <BoardProgram node={node} />
     case 'powerSupply': {
       const { voltage, limit } = supplySettings(data)
