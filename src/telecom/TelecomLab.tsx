@@ -1,5 +1,5 @@
 import { ReactFlowProvider } from '@xyflow/react'
-import { AudioWaveform, BookOpen, Map as MapIcon, PhoneCall } from 'lucide-react'
+import { Atom, AudioWaveform, BookOpen, Map as MapIcon, PhoneCall } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
 import { LabSwitcher } from '@/editor/LabSwitcher'
 import { LanguageMenu, ThemeToggle } from '@/editor/TopBar'
@@ -9,17 +9,19 @@ import { CellMap } from './CellMap'
 import { Guide } from './Guide'
 import { Scope } from './Scope'
 import { useTelecom, type Mode } from './store'
+import { Waves } from './Waves'
 import { useTelecomBook } from './ui'
 
 /*
  * The Telecom Lab: how a phone call gets from your mouth to someone else's
- * ear, through landlines, 2G to 5G, towers and fibre. Four sections: the call
- * as a circuit you can rebuild, modulation on a scope, towers and coverage on
- * a city map, and a guide to the generations and the telephone.
+ * ear, through landlines, 2G to 5G, towers and fibre. Five sections: the call
+ * as a circuit you can rebuild, the physics of waves, modulation on a scope,
+ * towers and coverage on a city map, and a guide to the generations and the telephone.
  */
 
 const MODES: { id: Mode; icon: typeof BookOpen }[] = [
   { id: 'call', icon: PhoneCall },
+  { id: 'waves', icon: Atom },
   { id: 'scope', icon: AudioWaveform },
   { id: 'map', icon: MapIcon },
   { id: 'guide', icon: BookOpen },
@@ -59,7 +61,7 @@ export default function TelecomLab() {
           </div>
         </header>
         <main className="flex min-h-0 flex-1 flex-col">
-          {mode === 'call' ? <CallBoard /> : mode === 'scope' ? <Scope /> : mode === 'map' ? <CellMap /> : <Guide />}
+          {mode === 'call' ? <CallBoard /> : mode === 'waves' ? <Waves /> : mode === 'scope' ? <Scope /> : mode === 'map' ? <CellMap /> : <Guide />}
         </main>
       </div>
     </ReactFlowProvider>

@@ -11,7 +11,7 @@ import { TECHS, type Building, type Tech, type Tower } from './radio'
  * and the city map (towers, the phone, its walk).
  */
 
-export type Mode = 'call' | 'scope' | 'map' | 'guide'
+export type Mode = 'call' | 'waves' | 'scope' | 'map' | 'guide'
 export type Panel = 'call' | 'part' | 'tray'
 
 export type PartNodeType = Node<PartData, 'part'>
@@ -264,7 +264,7 @@ export const useTelecom = create<TelecomState>()(
         const tech = TECHS.includes(kept.tech as Tech) ? (kept.tech as Tech) : current.tech
         return {
           ...current,
-          mode: (['call', 'scope', 'map', 'guide'] as Mode[]).includes(kept.mode as Mode) ? (kept.mode as Mode) : current.mode,
+          mode: (['call', 'waves', 'scope', 'map', 'guide'] as Mode[]).includes(kept.mode as Mode) ? (kept.mode as Mode) : current.mode,
           tech,
           ...boardFor(tech),
           scheme: SCHEMES.includes(kept.scheme as Scheme) ? (kept.scheme as Scheme) : current.scheme,

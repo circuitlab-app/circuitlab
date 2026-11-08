@@ -1,7 +1,26 @@
 import type { Scheme } from '@/telecom/modulation'
+import type { MarkerId, RegionId } from '@/telecom/physics'
 import type { Form, Hop, Note, PartKind, Phase, Problem, ZoneKey } from '@/telecom/parts'
 import type { Band5g, GenerationId, NetIcon, RadioTech, Tech } from '@/telecom/radio'
 import type { Mode, Panel } from '@/telecom/store'
+
+export type WaveCardId =
+  | 'anatomy'
+  | 'light'
+  | 'spectrum'
+  | 'em'
+  | 'inverse'
+  | 'snell'
+  | 'diffraction'
+  | 'interference'
+  | 'doppler'
+  | 'fourier'
+  | 'sampling'
+  | 'shannon'
+  | 'beam'
+
+/** One card of the Waves section: its title, the law's name, what it says and why phones care. */
+export type WaveCard = { title: string; law: string; text: string; why: string }
 
 /** What a step of the call is about, for the words that explain it. */
 export type HopContext = { hop: Hop; tech: Tech; radio: RadioTech; km?: number; walls?: number }
@@ -93,6 +112,69 @@ export type TelecomBook = {
     handover: (from: string, to: string) => string
     none: string
     icons: Record<NetIcon, string>
+  }
+
+  waves: {
+    intro: string
+    why: string
+    cards: Record<WaveCardId, WaveCard>
+    labels: {
+      frequency: string
+      amplitude: string
+      wavelength: string
+      period: string
+      speed: string
+      slow: string
+      halfWave: string
+      quarterWave: string
+      photon: string
+      ionising: string
+      nonIonising: string
+      electric: string
+      magnetic: string
+      vertical: string
+      horizontal: string
+      distance: string
+      received: string
+      freeSpace: string
+      city: string
+      angle: string
+      top: string
+      bottom: string
+      critical: string
+      tir: string
+      reflected: string
+      refracted: string
+      gap: string
+      phase: string
+      waveA: string
+      waveB: string
+      sum: string
+      constructive: string
+      destructive: string
+      spacing: string
+      ahead: string
+      behind: string
+      harmonics: string
+      time: string
+      spectrum: string
+      signal: string
+      sampleRate: string
+      alias: string
+      faithful: string
+      bandwidth: string
+      snr: string
+      capacity: string
+      efficiency: string
+      elements: string
+      steer: string
+    }
+    refs: Record<'field' | 'bus' | 'person' | 'phone' | 'coin' | 'grain', string>
+    regions: Record<RegionId, string>
+    markers: Record<MarkerId, string>
+    media: Record<'air' | 'water' | 'glass' | 'core' | 'cladding', string>
+    dopplerCases: { car: string; train: string; satellite: string }
+    db: { title: string; rows: { db: string; text: string }[] }
   }
 
   guide: {

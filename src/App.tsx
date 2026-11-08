@@ -8,7 +8,7 @@ import { InspectorPanel } from '@/editor/Inspector'
 import { MobileDock } from '@/editor/MobileDock'
 import { PartsSidebar } from '@/editor/PartsSidebar'
 import { StatusBar } from '@/editor/StatusBar'
-import { PIPELINES_HASH, TELECOM_HASH } from '@/editor/LabSwitcher'
+import { PIPELINES_HASH, POWER_HASH, TELECOM_HASH } from '@/editor/LabSwitcher'
 import { TopBar } from '@/editor/TopBar'
 import { Workspace } from '@/editor/Workspace'
 import { useShortcuts } from '@/hooks/useShortcuts'
@@ -20,10 +20,11 @@ import { useSettings } from '@/store/settings'
 // the other labs are only fetched when they are opened
 const PipelineLab = lazy(() => import('@/pipeline/PipelineLab'))
 const TelecomLab = lazy(() => import('@/telecom/TelecomLab'))
+const PowerLab = lazy(() => import('@/power/PowerLab'))
 
-type Page = 'board' | 'telecom' | 'pipelines'
+type Page = 'board' | 'power' | 'telecom' | 'pipelines'
 
-/** The page in the address: `#/telecom` and `#/pipelines` are the labs, anything else the circuit board. */
+/** The page in the address: `#/power`, `#/telecom` and `#/pipelines` are the labs, anything else the circuit board. */
 function usePage(): Page {
   const hash = useSyncExternalStore(
     (onChange) => {
@@ -33,7 +34,7 @@ function usePage(): Page {
     () => window.location.hash,
     () => '',
   )
-  return hash.startsWith(PIPELINES_HASH) ? 'pipelines' : hash.startsWith(TELECOM_HASH) ? 'telecom' : 'board'
+  return hash.startsWith(PIPELINES_HASH) ? 'pipelines' : hash.startsWith(TELECOM_HASH) ? 'telecom' : hash.startsWith(POWER_HASH) ? 'power' : 'board'
 }
 
 /** The circuit board, with the solver and the keyboard shortcuts that only make sense on it. */
@@ -63,7 +64,7 @@ export default function App() {
   const { t, dir } = useI18n()
   const theme = useSettings((s) => s.theme)
   const page = usePage()
-  useDocumentLanguage(page === 'pipelines' ? t.toolbar.pipelines : page === 'telecom' ? t.toolbar.telecom : undefined)
+  useDocumentLanguage(page === 'pipelines' ? t.toolbar.pipelines : page === 'telecom' ? t.toolbar.telecom : page === 'power' ? t.toolbar.power : undefined)
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
@@ -83,7 +84,7 @@ export default function App() {
           <CircuitBoard />
         ) : (
           <Suspense fallback={<div className="h-dvh bg-background" />}>
-            {page === 'pipelines' ? <PipelineLab /> : <TelecomLab />}
+            {page === 'pipelines' ? <PipelineLab /> : page === 'power' ? <PowerLab /> : <TelecomLab />}
           </Suspense>
         )}
         <Toaster position="bottom-center" richColors dir={dir} theme={theme} />

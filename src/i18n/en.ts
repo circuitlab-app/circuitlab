@@ -81,6 +81,9 @@ export type Dictionary = {
     /** the Telecom Lab page: phones, towers and 2G–5G */
     telecom: string
     telecomHint: string
+    /** the Power Lab page: from power plant to socket */
+    power: string
+    powerHint: string
   }
   confirm: {
     clearTitle: string
@@ -1095,6 +1098,8 @@ export const en: Dictionary = {
     labs: 'Labs',
     telecom: 'Telecom Lab',
     telecomHint: 'How phones, towers and 2G to 5G carry your voice',
+    power: 'Power Lab',
+    powerHint: 'From power plant to socket: the grid, AC and safety',
   },
   confirm: {
     clearTitle: 'Clear the board?',

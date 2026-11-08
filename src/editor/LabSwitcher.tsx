@@ -1,4 +1,4 @@
-import { ChevronDown, RadioTower, Workflow, type LucideIcon } from 'lucide-react'
+import { ChevronDown, RadioTower, Workflow, Zap, type LucideIcon } from 'lucide-react'
 import { BrandLogo } from '@/components/BrandLogo'
 import {
   DropdownMenu,
@@ -18,21 +18,24 @@ import { cn } from '@/lib/utils'
  * menu only changes the address.
  */
 
-export type Lab = 'board' | 'telecom' | 'pipelines'
+export type Lab = 'board' | 'power' | 'telecom' | 'pipelines'
 
+export const POWER_HASH = '#/power'
 export const TELECOM_HASH = '#/telecom'
 export const PIPELINES_HASH = '#/pipelines'
 
-const ADDRESS: Record<Lab, string> = { board: '#/', telecom: TELECOM_HASH, pipelines: PIPELINES_HASH }
-const LABS: Lab[] = ['board', 'telecom', 'pipelines']
+const ADDRESS: Record<Lab, string> = { board: '#/', power: POWER_HASH, telecom: TELECOM_HASH, pipelines: PIPELINES_HASH }
+const LABS: Lab[] = ['board', 'power', 'telecom', 'pipelines']
 
 /** Starts loading the other labs before one is picked, e.g. when the pointer reaches the menu. */
 const preload = () => {
+  void import('@/power/PowerLab')
   void import('@/telecom/TelecomLab')
   void import('@/pipeline/PipelineLab')
 }
 
 const MARKS: Record<Exclude<Lab, 'board'>, { icon: LucideIcon; color: string }> = {
+  power: { icon: Zap, color: 'oklch(0.68 0.17 60)' },
   telecom: { icon: RadioTower, color: 'oklch(0.55 0.17 250)' },
   pipelines: { icon: Workflow, color: 'var(--primary)' },
 }
@@ -48,9 +51,10 @@ function LabMark({ lab, className }: { lab: Exclude<Lab, 'board'>; className?: s
 
 export function LabSwitcher({ current }: { current: Lab }) {
   const { t } = useI18n()
-  const name: Record<Lab, string> = { board: t.app.title, telecom: t.toolbar.telecom, pipelines: t.toolbar.pipelines }
+  const name: Record<Lab, string> = { board: t.app.title, power: t.toolbar.power, telecom: t.toolbar.telecom, pipelines: t.toolbar.pipelines }
   const hint: Record<Lab, string> = {
     board: t.app.subtitle,
+    power: t.toolbar.powerHint,
     telecom: t.toolbar.telecomHint,
     pipelines: t.toolbar.pipelinesHint,
   }

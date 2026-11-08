@@ -91,9 +91,10 @@ The solver only re-runs when the electrical makeup of the board changes (`src/ho
 
 ## Telecom Lab (`#/telecom`)
 
-How a phone call travels: landline, 2G to 5G and direct radio. It sits in the labs menu (logo and name) between the board and the Pipeline Lab, and is its own lazy chunk. Four sections:
+How a phone call travels: landline, 2G to 5G and direct radio. It sits in the labs menu (logo and name) between the board and the Pipeline Lab, and is its own lazy chunk. Five sections:
 
 - **Call journey** (`CallBoard.tsx`): the call as a circuit of telecom parts (`parts.ts`: microphone, ADC, codec, modulator, amplifier, antenna, air, tower, fibre, core network, demodulator, DAC, speaker, copper pair, exchange). Each part turns one signal form into another (analog → bits → RF → radio wave → light …), and `traceCall` follows the signal from the microphone and stops at the first part that gets the wrong form, is switched off, is out of range, or (between two towers) misses the core network. Parts can be added, removed, rewired and changed; `callSteps` turns a working chain into dialling/set-up, ringing/paging and the voice hop by hop.
+- **Waves & physics** (`physics.ts`, `Waves.tsx`): thirteen interactive cards on the laws behind telecom: wavelength and frequency (c = f·λ, antenna length), the electromagnetic spectrum and photon energy, Maxwell's wave and polarisation, the inverse-square law and decibels, Snell's law and fibre, diffraction, interference, Doppler, Fourier, Nyquist sampling, Shannon capacity and beamforming. Animations run only while a card is on screen and stop for reduced motion; the formulas are tested in `physics.test.ts`.
 - **Modulation** (`modulation.ts`, `Scope.tsx`): text → UTF-8 bits → Gray-coded constellations (ASK, FSK, BPSK, QPSK, 8PSK, 16/64/256-QAM) through seeded noise and back to text, plus AM and FM.
 - **Towers & coverage** (`CellMap.tsx`): a city with towers and buildings; `serviceAt` in `radio.ts` picks the newest generation the phone can use both ways and the letter a phone would show (G, E, 3G, H, H+, 4G/LTE, LTE+, 5G, 5G+).
 - **Guide** (`Guide.tsx`): the landline phone with a DTMF keypad (`playTones` in `lib/sound.ts`), 1G to 6G with how each shares the air, phone letters, speeds and a glossary.
