@@ -26,7 +26,7 @@ export const arAi: AiBook = {
   send: 'أرسل',
   stop: 'إيقاف',
   thinkingNow: 'أفكّر',
-  seconds: (n) => `${n.toLocaleString('ar-EG')} ث`,
+  seconds: (n) => `${n.toLocaleString('en-US')} ث`,
   you: 'أنت',
   helper: 'لوحة الذكاء الاصطناعي',
   changed: 'ما غيّرته',

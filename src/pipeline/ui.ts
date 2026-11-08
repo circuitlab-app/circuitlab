@@ -9,13 +9,11 @@ import type { PipelineBook } from '@/i18n/pipeline/types'
 
 const BOOKS: Record<Lang, PipelineBook> = { en: enPipeline, fa: faPipeline, ar: arPipeline }
 
-const FA_DIGITS = '۰۱۲۳۴۵۶۷۸۹'
-
 export function usePipelineBook() {
   const { lang, dir } = useI18n()
   const book = BOOKS[lang]
-  // Persian counts in its own digits; Arabic in this app uses 0–9
-  const digits = (text: string) => (lang === 'fa' ? text.replace(/\d/g, (d) => FA_DIGITS[Number(d)]) : text)
+  // every language shows numbers as 0–9
+  const digits = (text: string) => text
   /** Seconds as a clock, m:ss. */
   const clock = (seconds: number) => {
     const s = Math.max(0, Math.floor(Number.isFinite(seconds) ? seconds : 0))

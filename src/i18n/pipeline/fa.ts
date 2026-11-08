@@ -1,7 +1,7 @@
 import type { PipelineBook } from './types'
 
 const code = (text: string) => `«${text}»`
-const n = (value: number) => value.toLocaleString('fa-IR')
+const n = (value: number) => value.toLocaleString('en-US')
 
 export const faPipeline: PipelineBook = {
   title: 'آزمایشگاه پایپ‌لاین',

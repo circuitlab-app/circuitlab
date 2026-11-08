@@ -25,7 +25,7 @@ export const faAi: AiBook = {
   send: 'بفرست',
   stop: 'توقف',
   thinkingNow: 'دارم فکر می‌کنم',
-  seconds: (n) => `${n.toLocaleString('fa-IR')} ثانیه`,
+  seconds: (n) => `${n.toLocaleString('en-US')} ثانیه`,
   you: 'تو',
   helper: 'برد هوش مصنوعی',
   changed: 'چه چیزی را عوض کردم',

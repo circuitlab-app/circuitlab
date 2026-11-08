@@ -28,7 +28,7 @@ export function useWide() {
 export function useBook() {
   const { lang, dir } = useI18n()
   // Persian counts in its own digits; Arabic in this app uses 0–9
-  const num = (n: number) => (lang === 'fa' ? n.toLocaleString('fa-IR') : String(n))
+  const num = (n: number) => String(n)
   return { book: BOOKS[lang], dir, lang, num }
 }
 

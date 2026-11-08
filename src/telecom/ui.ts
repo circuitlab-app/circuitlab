@@ -28,12 +28,10 @@ import { radioOf, type Gen, type Tech } from './radio'
 
 const BOOKS: Record<Lang, TelecomBook> = { en: enTelecom, fa: faTelecom, ar: arTelecom }
 
-const FA_DIGITS = '۰۱۲۳۴۵۶۷۸۹'
-
 export function useTelecomBook() {
   const { lang, dir } = useI18n()
   const book = BOOKS[lang]
-  const digits = (text: string) => (lang === 'fa' ? text.replace(/\d/g, (d) => FA_DIGITS[Number(d)]) : text)
+  const digits = (text: string) => text
   /** A number with up to `fraction` decimals, in the reader's digits. */
   const num = (value: number, fraction = 0) =>
     digits(value.toLocaleString('en-US', { maximumFractionDigits: fraction, useGrouping: false }))
