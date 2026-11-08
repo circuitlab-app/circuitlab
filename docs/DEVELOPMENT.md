@@ -89,9 +89,20 @@ The solver is pure and unit-tested (`solver.test.ts`, and `outputs.test.ts` for 
 
 The solver only re-runs when the electrical makeup of the board changes (`src/hooks/useSimulationEngine.ts`); dragging parts around doesn't trigger it.
 
+## Telecom Lab (`#/telecom`)
+
+How a phone call travels: landline, 2G to 5G and direct radio. It sits in the labs menu (logo and name) between the board and the Pipeline Lab, and is its own lazy chunk. Four sections:
+
+- **Call journey** (`CallBoard.tsx`): the call as a circuit of telecom parts (`parts.ts`: microphone, ADC, codec, modulator, amplifier, antenna, air, tower, fibre, core network, demodulator, DAC, speaker, copper pair, exchange). Each part turns one signal form into another (analog → bits → RF → radio wave → light …), and `traceCall` follows the signal from the microphone and stops at the first part that gets the wrong form, is switched off, is out of range, or (between two towers) misses the core network. Parts can be added, removed, rewired and changed; `callSteps` turns a working chain into dialling/set-up, ringing/paging and the voice hop by hop.
+- **Modulation** (`modulation.ts`, `Scope.tsx`): text → UTF-8 bits → Gray-coded constellations (ASK, FSK, BPSK, QPSK, 8PSK, 16/64/256-QAM) through seeded noise and back to text, plus AM and FM.
+- **Towers & coverage** (`CellMap.tsx`): a city with towers and buildings; `serviceAt` in `radio.ts` picks the newest generation the phone can use both ways and the letter a phone would show (G, E, 3G, H, H+, 4G/LTE, LTE+, 5G, 5G+).
+- **Guide** (`Guide.tsx`): the landline phone with a DTMF keypad (`playTones` in `lib/sound.ts`), 1G to 6G with how each shares the air, phone letters, speeds and a glossary.
+
+The radio model (`radio.ts`) is for teaching: the 3GPP urban path-loss formula, a loss per wall that grows with frequency, and one sensitivity per technology. Words live in `src/i18n/telecom/`; the engine is tested in `src/telecom/telecom.test.ts`.
+
 ## Pipeline Lab (`#/pipelines`)
 
-A second page that shows how a GitHub Actions workflow runs, drawn as a circuit: the event is the battery, jobs are parts, `needs:` are the wires and the run result is a bulb. The site's logo and name are a menu of the two labs (`src/editor/LabSwitcher.tsx`, on both pages). The page is its own lazy chunk, with the `yaml` parser in a chunk of its own, so the board never loads it.
+A second page that shows how a GitHub Actions workflow runs, drawn as a circuit: the event is the battery, jobs are parts, `needs:` are the wires and the run result is a bulb. The site's logo and name are a menu of the labs (`src/editor/LabSwitcher.tsx`, on every page). The page is its own lazy chunk, with the `yaml` parser in a chunk of its own, so the board never loads it.
 
 - `src/pipeline/parse.ts` reads workflow YAML (with line ranges for every job and step); `expr.ts` evaluates `${{ }}` and `if:` the way GitHub does (case-insensitive `==`, status functions, implicit `success() &&`); `trigger.ts` decides whether an event passes the `on:` filters.
 - `simulate.ts` works out the whole run at once from the event, the steps set to fail, the step outputs and the approvals given: every job, matrix copy and step with its start and end second. The page only asks what is happening at second *t*, so the clock can play, pause and be dragged on the timeline. Jobs start when their `needs` finish; a failed step skips the rest of its job, a failed job skips the jobs that need it, a failed matrix copy cancels its sisters (fail-fast), protected environments wait for approval.
@@ -112,6 +123,7 @@ src/
   editor/       board, part nodes, wires, sidebar, inspector, lessons, gallery, top/status bars
   displays/     screen faces (digits, LCD, OLED, TFT, LED walls, oscilloscope)
   toolbox/      the workshop tools section
+  telecom/      the Telecom Lab: phone calls, modulation, towers and 2G–5G (#/telecom)
   pipeline/     the Pipeline Lab: GitHub Actions workflows simulated like circuits (#/pipelines)
   three/        shared canvas, lighting helpers and the 3D part models
   store/        Zustand stores: circuit (with undo/redo), settings, simulation, drag

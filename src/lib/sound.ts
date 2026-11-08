@@ -25,6 +25,31 @@ function context(): AudioContext | null {
   return ctx
 }
 
+/**
+ * Plays sine tones together for `seconds`, `delay` seconds from now: a DTMF
+ * key is two tones (697 Hz + 1209 Hz for "1"), a dial tone one. Call it from
+ * a click so the browser allows the sound.
+ */
+export function playTones(freqs: number[], seconds: number, delay = 0) {
+  const ac = context()
+  if (!ac || !master || !freqs.length) return
+  const start = ac.currentTime + delay
+  const level = 0.16 / freqs.length
+  const gain = ac.createGain()
+  gain.gain.setValueAtTime(0, start)
+  gain.gain.linearRampToValueAtTime(level, start + 0.012)
+  gain.gain.setValueAtTime(level, Math.max(start + 0.012, start + seconds - 0.02))
+  gain.gain.linearRampToValueAtTime(0, start + seconds)
+  gain.connect(master)
+  for (const frequency of freqs) {
+    const osc = ac.createOscillator()
+    osc.frequency.value = frequency
+    osc.connect(gain)
+    osc.start(start)
+    osc.stop(start + seconds + 0.05)
+  }
+}
+
 /** Call from a user gesture so later sounds are allowed to play. */
 export function unlockAudio() {
   context()

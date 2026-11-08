@@ -8,7 +8,7 @@ import { InspectorPanel } from '@/editor/Inspector'
 import { MobileDock } from '@/editor/MobileDock'
 import { PartsSidebar } from '@/editor/PartsSidebar'
 import { StatusBar } from '@/editor/StatusBar'
-import { PIPELINES_HASH } from '@/editor/LabSwitcher'
+import { PIPELINES_HASH, TELECOM_HASH } from '@/editor/LabSwitcher'
 import { TopBar } from '@/editor/TopBar'
 import { Workspace } from '@/editor/Workspace'
 import { useShortcuts } from '@/hooks/useShortcuts'
@@ -17,12 +17,13 @@ import { useDocumentLanguage, useI18n } from '@/i18n'
 import { unlockAudio } from '@/lib/sound'
 import { useSettings } from '@/store/settings'
 
-// the Pipeline Lab (GitHub Actions simulated like a circuit) is only fetched when it is opened
+// the other labs are only fetched when they are opened
 const PipelineLab = lazy(() => import('@/pipeline/PipelineLab'))
+const TelecomLab = lazy(() => import('@/telecom/TelecomLab'))
 
-type Page = 'board' | 'pipelines'
+type Page = 'board' | 'telecom' | 'pipelines'
 
-/** The page in the address: `#/pipelines` is the Pipeline Lab, anything else the circuit board. */
+/** The page in the address: `#/telecom` and `#/pipelines` are the labs, anything else the circuit board. */
 function usePage(): Page {
   const hash = useSyncExternalStore(
     (onChange) => {
@@ -32,7 +33,7 @@ function usePage(): Page {
     () => window.location.hash,
     () => '',
   )
-  return hash.startsWith(PIPELINES_HASH) ? 'pipelines' : 'board'
+  return hash.startsWith(PIPELINES_HASH) ? 'pipelines' : hash.startsWith(TELECOM_HASH) ? 'telecom' : 'board'
 }
 
 /** The circuit board, with the solver and the keyboard shortcuts that only make sense on it. */
@@ -62,7 +63,7 @@ export default function App() {
   const { t, dir } = useI18n()
   const theme = useSettings((s) => s.theme)
   const page = usePage()
-  useDocumentLanguage(page === 'pipelines' ? t.toolbar.pipelines : undefined)
+  useDocumentLanguage(page === 'pipelines' ? t.toolbar.pipelines : page === 'telecom' ? t.toolbar.telecom : undefined)
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
@@ -78,12 +79,12 @@ export default function App() {
   return (
     <DirectionProvider dir={dir}>
       <TooltipProvider delayDuration={250}>
-        {page === 'pipelines' ? (
-          <Suspense fallback={<div className="h-dvh bg-background" />}>
-            <PipelineLab />
-          </Suspense>
-        ) : (
+        {page === 'board' ? (
           <CircuitBoard />
+        ) : (
+          <Suspense fallback={<div className="h-dvh bg-background" />}>
+            {page === 'pipelines' ? <PipelineLab /> : <TelecomLab />}
+          </Suspense>
         )}
         <Toaster position="bottom-center" richColors dir={dir} theme={theme} />
       </TooltipProvider>

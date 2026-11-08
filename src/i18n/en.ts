@@ -78,6 +78,9 @@ export type Dictionary = {
     pipelinesHint: string
     /** the menu of labs behind the logo and name */
     labs: string
+    /** the Telecom Lab page: phones, towers and 2G–5G */
+    telecom: string
+    telecomHint: string
   }
   confirm: {
     clearTitle: string
@@ -1090,6 +1093,8 @@ export const en: Dictionary = {
     pipelines: 'Pipeline Lab',
     pipelinesHint: 'Watch a GitHub Actions workflow run',
     labs: 'Labs',
+    telecom: 'Telecom Lab',
+    telecomHint: 'How phones, towers and 2G to 5G carry your voice',
   },
   confirm: {
     clearTitle: 'Clear the board?',

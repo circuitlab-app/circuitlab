@@ -671,6 +671,8 @@ export const fa: Dictionary = {
     pipelines: 'آزمایشگاه پایپ‌لاین',
     pipelinesHint: 'اجرای یک ورک‌فلوی GitHub Actions را ببینید',
     labs: 'آزمایشگاه‌ها',
+    telecom: 'آزمایشگاه مخابرات',
+    telecomHint: 'تلفن، موبایل، دکل‌ها و 2G تا 5G چطور صدای شما را می‌برند',
   },
   confirm: {
     clearTitle: 'میز کار پاک شود؟',

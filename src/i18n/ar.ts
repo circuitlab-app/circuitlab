@@ -669,6 +669,8 @@ export const ar: Dictionary = {
     pipelines: 'مختبر خطوط الأنابيب',
     pipelinesHint: 'شاهد سير عمل GitHub Actions وهو يعمل',
     labs: 'المختبرات',
+    telecom: 'مختبر الاتصالات',
+    telecomHint: 'كيف تنقل الهواتف والأبراج و2G حتى 5G صوتك',
   },
   confirm: {
     clearTitle: 'هل تريد مسح اللوحة؟',
