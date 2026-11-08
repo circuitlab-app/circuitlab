@@ -4,8 +4,6 @@ const code = (text: string) => `«${text}»`
 
 export const arPipeline: PipelineBook = {
   title: 'مختبر خطوط الأنابيب',
-  subtitle: 'شاهد سير عمل GitHub Actions وهو يعمل، مثل التيار في الدائرة',
-  back: 'لوحة الدائرة',
   workflow: 'سير العمل',
   list: (items) => (items.length <= 1 ? (items[0] ?? '') : `${items.slice(0, -1).join('، ')} و${items.at(-1)}`),
   examples: {

@@ -669,6 +669,8 @@ export const fa: Dictionary = {
     more: 'بیشتر',
     toolbox: 'جعبه‌ابزار',
     pipelines: 'آزمایشگاه پایپ‌لاین',
+    pipelinesHint: 'اجرای یک ورک‌فلوی GitHub Actions را ببینید',
+    labs: 'آزمایشگاه‌ها',
   },
   confirm: {
     clearTitle: 'میز کار پاک شود؟',

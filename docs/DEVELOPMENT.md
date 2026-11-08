@@ -91,7 +91,7 @@ The solver only re-runs when the electrical makeup of the board changes (`src/ho
 
 ## Pipeline Lab (`#/pipelines`)
 
-A second page that shows how a GitHub Actions workflow runs, drawn as a circuit: the event is the battery, jobs are parts, `needs:` are the wires and the run result is a bulb. It opens from the top bar (or the ⋯ menu on phones) and is its own lazy chunk, with the `yaml` parser in a chunk of its own, so the board never loads it.
+A second page that shows how a GitHub Actions workflow runs, drawn as a circuit: the event is the battery, jobs are parts, `needs:` are the wires and the run result is a bulb. The site's logo and name are a menu of the two labs (`src/editor/LabSwitcher.tsx`, on both pages). The page is its own lazy chunk, with the `yaml` parser in a chunk of its own, so the board never loads it.
 
 - `src/pipeline/parse.ts` reads workflow YAML (with line ranges for every job and step); `expr.ts` evaluates `${{ }}` and `if:` the way GitHub does (case-insensitive `==`, status functions, implicit `success() &&`); `trigger.ts` decides whether an event passes the `on:` filters.
 - `simulate.ts` works out the whole run at once from the event, the steps set to fail, the step outputs and the approvals given: every job, matrix copy and step with its start and end second. The page only asks what is happening at second *t*, so the clock can play, pause and be dragged on the timeline. Jobs start when their `needs` finish; a failed step skips the rest of its job, a failed job skips the jobs that need it, a failed matrix copy cancels its sisters (fail-fast), protected environments wait for approval.

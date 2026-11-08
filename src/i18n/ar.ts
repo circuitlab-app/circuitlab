@@ -667,6 +667,8 @@ export const ar: Dictionary = {
     more: 'المزيد',
     toolbox: 'صندوق العُدّة',
     pipelines: 'مختبر خطوط الأنابيب',
+    pipelinesHint: 'شاهد سير عمل GitHub Actions وهو يعمل',
+    labs: 'المختبرات',
   },
   confirm: {
     clearTitle: 'هل تريد مسح اللوحة؟',

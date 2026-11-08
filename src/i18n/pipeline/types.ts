@@ -7,8 +7,6 @@ import type { ParseProblem } from '@/pipeline/types'
 /** Every word of the Pipeline Lab page, in one language. Workflow names, steps and logs stay as written. */
 export type PipelineBook = {
   title: string
-  subtitle: string
-  back: string
   workflow: string
   /** "a, b and c" in this language */
   list: (items: string[]) => string

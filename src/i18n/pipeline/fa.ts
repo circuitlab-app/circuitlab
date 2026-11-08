@@ -5,8 +5,6 @@ const n = (value: number) => value.toLocaleString('fa-IR')
 
 export const faPipeline: PipelineBook = {
   title: 'آزمایشگاه پایپ‌لاین',
-  subtitle: 'اجرای یک ورک‌فلوی GitHub Actions را ببینید، مثل جریان برق در مدار',
-  back: 'برد مدار',
   workflow: 'ورک‌فلو',
   list: (items) => (items.length <= 1 ? (items[0] ?? '') : `${items.slice(0, -1).join('، ')} و ${items.at(-1)}`),
   examples: {

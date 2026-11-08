@@ -1,24 +1,13 @@
 import { ReactFlowProvider } from '@xyflow/react'
-import {
-  ArrowLeft,
-  BookOpen,
-  FileCode,
-  Pause,
-  Play,
-  RotateCcw,
-  ScrollText,
-  SlidersHorizontal,
-  Square,
-  Workflow,
-} from 'lucide-react'
+import { BookOpen, FileCode, Pause, Play, RotateCcw, ScrollText, SlidersHorizontal, Square } from 'lucide-react'
 import { useEffect, type ReactNode } from 'react'
-import { BrandLogo } from '@/components/BrandLogo'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import { LabSwitcher } from '@/editor/LabSwitcher'
 import { LanguageMenu, ThemeToggle } from '@/editor/TopBar'
 import { cn } from '@/lib/utils'
 import { Board } from './Board'
@@ -195,30 +184,11 @@ function LabHeader() {
   const { book } = usePipelineBook()
   return (
     <header className="relative z-20 flex h-14 shrink-0 items-center gap-1 border-b bg-background px-2 sm:gap-2 sm:px-3">
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <a
-            href="#/"
-            className="flex shrink-0 items-center gap-1.5 rounded-lg px-1.5 py-1 transition hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
-            aria-label={book.back}
-          >
-            <ArrowLeft className="size-4 rtl:-scale-x-100" aria-hidden />
-            <BrandLogo className="size-8" />
-          </a>
-        </TooltipTrigger>
-        <TooltipContent>{book.back}</TooltipContent>
-      </Tooltip>
+      <h1 className="sr-only">{book.title}</h1>
+      {/* the logo and name open the menu of labs, the way back to the circuit board */}
+      <LabSwitcher current="pipelines" />
       <Separator orientation="vertical" className="mx-0.5 !h-6 max-sm:hidden" />
-      <div className="min-w-0 leading-tight max-md:hidden">
-        <h1 className="flex items-center gap-1.5 text-[15px] font-semibold tracking-tight">
-          <Workflow className="size-4 text-primary" aria-hidden />
-          {book.title}
-        </h1>
-        <p className="truncate text-[11px] text-muted-foreground max-xl:hidden">{book.subtitle}</p>
-      </div>
-      <div className="ms-1 sm:ms-2">
-        <WorkflowPicker />
-      </div>
+      <WorkflowPicker />
       <div className="ms-auto flex shrink-0 items-center gap-0.5">
         <RunControls />
         <div className="flex items-center gap-0.5 max-lg:hidden">

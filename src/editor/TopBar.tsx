@@ -1,4 +1,4 @@
-import { Ellipsis, Workflow } from 'lucide-react'
+import { Ellipsis } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { LiquidButton } from '@/components/animate-ui/buttons/liquid'
 import { ThemeTogglerButton, ThemeTogglerButtonIcon } from '@/components/animate-ui/buttons/theme-toggler'
@@ -10,7 +10,6 @@ import { Sun } from '@/components/animate-ui/icons/sun'
 import { Trash2 } from '@/components/animate-ui/icons/trash-2'
 import { Undo2 } from '@/components/animate-ui/icons/undo-2'
 import { Volume2 } from '@/components/animate-ui/icons/volume-2'
-import { BrandLogo } from '@/components/BrandLogo'
 import { VolumeX } from '@/components/animate-ui/icons/volume-x'
 import {
   AlertDialog,
@@ -46,6 +45,7 @@ import { useSimulation } from '@/store/simulation'
 import { ToolboxButton } from '@/toolbox/ToolboxButton'
 import { ExamplesGallery } from './ExamplesGallery'
 import { HelpDialog } from './HelpDialog'
+import { LabSwitcher } from './LabSwitcher'
 
 /** The app's mark: a closed loop with a battery on one side and a lit bulb on top. */
 function ToolButton({
@@ -148,29 +148,6 @@ export function ThemeToggle() {
   )
 }
 
-export const PIPELINES_HASH = '#/pipelines'
-
-/** Starts loading the Pipeline Lab before it is opened, e.g. when the pointer reaches its button. */
-const preloadPipelines = () => void import('@/pipeline/PipelineLab')
-
-/** Opens the Pipeline Lab: a GitHub Actions workflow simulated like a circuit. */
-function PipelinesButton({ className }: { className?: string }) {
-  const { t } = useI18n()
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button variant="ghost" size="lg" className={cn('gap-2 px-2.5 font-medium', className)} asChild>
-          <a href={PIPELINES_HASH} aria-label={t.toolbar.pipelines} onPointerEnter={preloadPipelines} onFocus={preloadPipelines}>
-            <Workflow className="size-[18px]" aria-hidden />
-            <span className="max-xl:hidden">{t.toolbar.pipelines}</span>
-          </a>
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent className="xl:hidden">{t.toolbar.pipelines}</TooltipContent>
-    </Tooltip>
-  )
-}
-
 type Pending = { kind: 'clear' } | { kind: 'preset'; id: PresetId } | null
 
 function RunToggle() {
@@ -234,14 +211,6 @@ function MoreMenu({ onClear, onHelp, canClear }: { onClear: () => void; onHelp: 
         <DropdownMenuLabel className="text-xs text-muted-foreground">{t.toolbar.language}</DropdownMenuLabel>
         <LanguageItems />
         <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onSelect={() => {
-            window.location.hash = PIPELINES_HASH
-          }}
-        >
-          <Workflow className="size-4" aria-hidden />
-          {t.toolbar.pipelines}
-        </DropdownMenuItem>
         <DropdownMenuItem onSelect={onHelp}>{t.toolbar.help}</DropdownMenuItem>
         <DropdownMenuItem variant="destructive" disabled={!canClear} onSelect={onClear}>
           {t.toolbar.clear}
@@ -277,12 +246,9 @@ export function TopBar() {
 
   return (
     <header className="relative z-20 flex h-14 shrink-0 items-center gap-0.5 border-b bg-background px-2 sm:gap-1 sm:px-3">
-      <div className="flex min-w-0 items-center gap-2.5 pe-1 sm:pe-2">
-        <BrandLogo className="size-9" />
-        <div className="leading-tight max-sm:hidden">
-          <p className="text-[15px] font-semibold tracking-tight">{t.app.title}</p>
-          <p className="text-[11px] text-muted-foreground max-lg:hidden">{t.app.subtitle}</p>
-        </div>
+      {/* the logo and name open the menu of labs (circuit board, Pipeline Lab) */}
+      <div className="flex min-w-0 items-center pe-1 sm:pe-2">
+        <LabSwitcher current="board" />
       </div>
 
       <Separator orientation="vertical" className="mx-1 !h-6 max-sm:hidden" />
@@ -296,7 +262,6 @@ export function TopBar() {
 
       {/* phones open the Toolbox from the bottom dock instead */}
       <ToolboxButton className="max-md:hidden" />
-      <PipelinesButton className="max-md:hidden" />
 
       <ToolButton label={t.toolbar.undo} onClick={undo} disabled={!canUndo}>
         <Undo2 size={18} animateOnHover />

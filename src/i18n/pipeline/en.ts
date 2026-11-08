@@ -4,8 +4,6 @@ const code = (text: string) => `“${text}”`
 
 export const enPipeline: PipelineBook = {
   title: 'Pipeline Lab',
-  subtitle: 'Watch a GitHub Actions workflow run, like current through a circuit',
-  back: 'Circuit board',
   workflow: 'Workflow',
   list: (items) => (items.length <= 1 ? (items[0] ?? '') : `${items.slice(0, -1).join(', ')} and ${items.at(-1)}`),
   examples: {
