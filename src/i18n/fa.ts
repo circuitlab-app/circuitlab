@@ -668,6 +668,7 @@ export const fa: Dictionary = {
     help: 'راهنما',
     more: 'بیشتر',
     toolbox: 'جعبه‌ابزار',
+    pipelines: 'آزمایشگاه پایپ‌لاین',
   },
   confirm: {
     clearTitle: 'میز کار پاک شود؟',

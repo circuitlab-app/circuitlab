@@ -72,6 +72,8 @@ export type Dictionary = {
     help: string
     more: string
     toolbox: string
+    /** the Pipeline Lab page: GitHub Actions workflows simulated like circuits */
+    pipelines: string
   }
   confirm: {
     clearTitle: string
@@ -1081,6 +1083,7 @@ export const en: Dictionary = {
     help: 'Help',
     more: 'More',
     toolbox: 'Toolbox',
+    pipelines: 'Pipeline Lab',
   },
   confirm: {
     clearTitle: 'Clear the board?',

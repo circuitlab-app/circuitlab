@@ -89,6 +89,16 @@ The solver is pure and unit-tested (`solver.test.ts`, and `outputs.test.ts` for 
 
 The solver only re-runs when the electrical makeup of the board changes (`src/hooks/useSimulationEngine.ts`); dragging parts around doesn't trigger it.
 
+## Pipeline Lab (`#/pipelines`)
+
+A second page that shows how a GitHub Actions workflow runs, drawn as a circuit: the event is the battery, jobs are parts, `needs:` are the wires and the run result is a bulb. It opens from the top bar (or the ⋯ menu on phones) and is its own lazy chunk, with the `yaml` parser in a chunk of its own, so the board never loads it.
+
+- `src/pipeline/parse.ts` reads workflow YAML (with line ranges for every job and step); `expr.ts` evaluates `${{ }}` and `if:` the way GitHub does (case-insensitive `==`, status functions, implicit `success() &&`); `trigger.ts` decides whether an event passes the `on:` filters.
+- `simulate.ts` works out the whole run at once from the event, the steps set to fail, the step outputs and the approvals given: every job, matrix copy and step with its start and end second. The page only asks what is happening at second *t*, so the clock can play, pause and be dragged on the timeline. Jobs start when their `needs` finish; a failed step skips the rest of its job, a failed job skips the jobs that need it, a failed matrix copy cancels its sisters (fail-fast), protected environments wait for approval.
+- `runner.ts` makes up step durations and log lines from what each step says (`npm ci`, `actions/checkout` …). Nothing is executed.
+- The first example is this repository's own `.github/workflows/deploy.yml`, imported as text, so the page always shows the real release pipeline. Readers can paste their own workflow; it stays in the browser (`circuit-lab:pipelines`).
+- Words live in `src/i18n/pipeline/` (en, fa, ar); workflow names, steps and logs stay as written. The engine is tested in `src/pipeline/simulate.test.ts`.
+
 ## 3D rendering
 
 All parts share **one** WebGL canvas (`src/three/SceneCanvas.tsx`). Each part node registers a drei `<View>` that tracks its DOM box, so a board with dozens of parts still uses a single WebGL context. The canvas covers the window but ignores the pointer, so React Flow keeps handling every click and drag. Models live in `src/three/models/` and read their animation state from the simulation result each frame.
@@ -102,6 +112,7 @@ src/
   editor/       board, part nodes, wires, sidebar, inspector, lessons, gallery, top/status bars
   displays/     screen faces (digits, LCD, OLED, TFT, LED walls, oscilloscope)
   toolbox/      the workshop tools section
+  pipeline/     the Pipeline Lab: GitHub Actions workflows simulated like circuits (#/pipelines)
   three/        shared canvas, lighting helpers and the 3D part models
   store/        Zustand stores: circuit (with undo/redo), settings, simulation, drag
   i18n/         en (default), ar, fa dictionaries and the useI18n hook

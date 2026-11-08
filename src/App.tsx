@@ -1,5 +1,5 @@
 import { ReactFlowProvider } from '@xyflow/react'
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect, useSyncExternalStore } from 'react'
 import { DirectionProvider } from '@/components/ui/direction'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -8,7 +8,7 @@ import { InspectorPanel } from '@/editor/Inspector'
 import { MobileDock } from '@/editor/MobileDock'
 import { PartsSidebar } from '@/editor/PartsSidebar'
 import { StatusBar } from '@/editor/StatusBar'
-import { TopBar } from '@/editor/TopBar'
+import { PIPELINES_HASH, TopBar } from '@/editor/TopBar'
 import { Workspace } from '@/editor/Workspace'
 import { useShortcuts } from '@/hooks/useShortcuts'
 import { useSimulationEngine } from '@/hooks/useSimulationEngine'
@@ -16,12 +16,52 @@ import { useDocumentLanguage, useI18n } from '@/i18n'
 import { unlockAudio } from '@/lib/sound'
 import { useSettings } from '@/store/settings'
 
-export default function App() {
-  const { dir } = useI18n()
-  const theme = useSettings((s) => s.theme)
-  useDocumentLanguage()
+// the Pipeline Lab (GitHub Actions simulated like a circuit) is only fetched when it is opened
+const PipelineLab = lazy(() => import('@/pipeline/PipelineLab'))
+
+type Page = 'board' | 'pipelines'
+
+/** The page in the address: `#/pipelines` is the Pipeline Lab, anything else the circuit board. */
+function usePage(): Page {
+  const hash = useSyncExternalStore(
+    (onChange) => {
+      window.addEventListener('hashchange', onChange)
+      return () => window.removeEventListener('hashchange', onChange)
+    },
+    () => window.location.hash,
+    () => '',
+  )
+  return hash.startsWith(PIPELINES_HASH) ? 'pipelines' : 'board'
+}
+
+/** The circuit board, with the solver and the keyboard shortcuts that only make sense on it. */
+function CircuitBoard() {
   useSimulationEngine()
   useShortcuts()
+  return (
+    <ReactFlowProvider>
+      <div className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
+        <TopBar />
+        <div className="flex min-h-0 flex-1">
+          <PartsSidebar />
+          <main className="relative min-w-0 flex-1">
+            <Workspace />
+          </main>
+          <InspectorPanel />
+        </div>
+        <StatusBar />
+        <MobileDock />
+      </div>
+      <DragGhost />
+    </ReactFlowProvider>
+  )
+}
+
+export default function App() {
+  const { t, dir } = useI18n()
+  const theme = useSettings((s) => s.theme)
+  const page = usePage()
+  useDocumentLanguage(page === 'pipelines' ? t.toolbar.pipelines : undefined)
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
@@ -37,21 +77,13 @@ export default function App() {
   return (
     <DirectionProvider dir={dir}>
       <TooltipProvider delayDuration={250}>
-        <ReactFlowProvider>
-          <div className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
-            <TopBar />
-            <div className="flex min-h-0 flex-1">
-              <PartsSidebar />
-              <main className="relative min-w-0 flex-1">
-                <Workspace />
-              </main>
-              <InspectorPanel />
-            </div>
-            <StatusBar />
-            <MobileDock />
-          </div>
-          <DragGhost />
-        </ReactFlowProvider>
+        {page === 'pipelines' ? (
+          <Suspense fallback={<div className="h-dvh bg-background" />}>
+            <PipelineLab />
+          </Suspense>
+        ) : (
+          <CircuitBoard />
+        )}
         <Toaster position="bottom-center" richColors dir={dir} theme={theme} />
       </TooltipProvider>
     </DirectionProvider>

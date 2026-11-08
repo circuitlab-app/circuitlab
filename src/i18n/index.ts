@@ -37,13 +37,13 @@ export function useI18n() {
   return { t: DICTIONARIES[lang], lang, dir: directionOf(lang) } as const
 }
 
-/** Keeps <html lang dir> and the tab title in sync with the chosen language. */
-export function useDocumentLanguage() {
+/** Keeps <html lang dir> and the tab title in sync with the chosen language; `page` names a page other than the board. */
+export function useDocumentLanguage(page?: string) {
   const { t, lang, dir } = useI18n()
   useEffect(() => {
     const root = document.documentElement
     root.lang = lang
     root.dir = dir
-    document.title = `${t.app.title} · ${t.app.subtitle}`
-  }, [t, lang, dir])
+    document.title = page ? `${page} · ${t.app.title}` : `${t.app.title} · ${t.app.subtitle}`
+  }, [t, lang, dir, page])
 }

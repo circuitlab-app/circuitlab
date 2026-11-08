@@ -666,6 +666,7 @@ export const ar: Dictionary = {
     help: 'مساعدة',
     more: 'المزيد',
     toolbox: 'صندوق العُدّة',
+    pipelines: 'مختبر خطوط الأنابيب',
   },
   confirm: {
     clearTitle: 'هل تريد مسح اللوحة؟',

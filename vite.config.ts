@@ -61,6 +61,8 @@ export default defineConfig({
             // dependencies, so without this the three.js group would claim them
             { name: 'state', test: /node_modules[\\/](zustand|use-sync-external-store)[\\/]/, priority: 35 },
             { name: 'react-flow', test: /node_modules[\\/](@xyflow|d3-.*)[\\/]/, priority: 30 },
+            // the YAML reader is only used by the Pipeline Lab: it loads with that page, not up front
+            { name: 'yaml', test: /node_modules[\\/]yaml[\\/]/, priority: 25 },
             { name: 'ui', test: /node_modules[\\/](motion|motion-dom|motion-utils|framer-motion|@animate-ui|radix-ui|@radix-ui|@floating-ui|sonner)[\\/]/, priority: 20 },
             // three.js, react-three and the helpers only they use
             {

@@ -1357,3 +1357,546 @@ html[lang='ar'] {
     animation: none;
   }
 }
+
+/* ───────────────────────── Pipeline Lab ─────────────────────────
+ * A GitHub Actions workflow drawn as a circuit (src/pipeline). Jobs are
+ * cards like the parts, wires carry the run's "current", and one set of
+ * state colours is shared by cards, wires, the bulb and the timeline. */
+
+:root {
+  --pipe-run: oklch(0.8 0.16 78);
+  --pipe-ok: oklch(0.66 0.16 155);
+  --pipe-bad: oklch(0.62 0.22 27);
+  --pipe-wait: oklch(0.64 0.14 240);
+  --pipe-off: oklch(0.62 0.015 260);
+  --pipe-idle: oklch(0.7 0.02 260);
+  --pipe-wire: oklch(0.72 0.03 250);
+  --pipe-log-bg: oklch(0.975 0.004 80);
+  --yaml-key: oklch(0.5 0.15 250);
+  --yaml-expr: oklch(0.52 0.14 60);
+  --yaml-string: oklch(0.5 0.13 150);
+}
+
+.dark {
+  --pipe-wire: oklch(0.5 0.03 250);
+  --pipe-idle: oklch(0.6 0.02 260);
+  --pipe-log-bg: oklch(0.155 0.01 45);
+  --yaml-key: oklch(0.76 0.12 245);
+  --yaml-expr: oklch(0.83 0.13 80);
+  --yaml-string: oklch(0.78 0.13 150);
+}
+
+.pipe-board .react-flow__node {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  cursor: grab;
+}
+
+.pipe-board .react-flow__controls {
+  --xy-controls-button-border-color: var(--border);
+}
+
+/* a card: the same tile as a part, with a fixed row rhythm (see layout.ts) */
+.pipe-node {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--card-foreground);
+  box-shadow: var(--shadow-card);
+  transition:
+    box-shadow 0.25s ease,
+    border-color 0.25s ease,
+    opacity 0.25s ease;
+}
+
+.pipe-node::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 1px 0 var(--card-highlight);
+  pointer-events: none;
+}
+
+.pipe-trigger,
+.pipe-result {
+  min-height: 196px;
+}
+
+.pipe-node__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  min-width: 0;
+  padding-inline: 4px 2px;
+}
+
+.pipe-node__title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.pipe-node__state {
+  flex-shrink: 0;
+  font-size: 10.5px;
+  color: var(--muted-foreground);
+}
+
+.pipe-node__meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 22px;
+  min-width: 0;
+}
+
+.pipe-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  max-width: 100%;
+  padding-inline: 6px;
+  border-radius: 6px;
+  background: var(--muted);
+  font-size: 10.5px;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+
+.pipe-chip b {
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.pipe-chip[data-tone='ok'] {
+  background: color-mix(in oklch, var(--pipe-ok) 16%, transparent);
+  color: color-mix(in oklab, var(--pipe-ok) 70%, var(--foreground));
+}
+
+.pipe-chip[data-tone='off'] {
+  background: color-mix(in oklch, var(--pipe-off) 18%, transparent);
+  text-decoration: line-through;
+}
+
+.pipe-chip[data-tone='wait'] {
+  background: color-mix(in oklch, var(--pipe-wait) 16%, transparent);
+  color: color-mix(in oklab, var(--pipe-wait) 70%, var(--foreground));
+}
+
+.pipe-on {
+  padding: 1px 4px;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  background: var(--muted);
+  color: var(--muted-foreground);
+}
+
+.pipe-on--active {
+  background: color-mix(in oklch, var(--pipe-run) 26%, transparent);
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+/* matrix copies: one chip each */
+.pipe-lanes {
+  display: flex;
+  gap: 4px;
+  height: 24px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.pipe-lane {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 5px;
+  max-width: 9rem;
+  height: 22px;
+  padding-inline: 7px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  transition: background 0.15s ease;
+}
+
+.pipe-lane:hover {
+  background: var(--muted);
+}
+
+.pipe-lane--active {
+  border-color: color-mix(in oklch, var(--primary) 55%, var(--border));
+  background: color-mix(in oklch, var(--primary) 9%, transparent);
+}
+
+/* the steps: in series, like parts on one wire */
+.pipe-steps {
+  position: relative;
+  padding: 4px;
+  border-radius: 8px;
+  background:
+    radial-gradient(circle, var(--stage-hole) 0 1px, transparent 1.5px) 5px 5px / 10px 10px,
+    var(--stage-bg);
+  box-shadow: inset 0 0 0 1px var(--stage-line);
+}
+
+.pipe-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 18px;
+  align-items: center;
+  height: 22px;
+  border-radius: 6px;
+}
+
+.pipe-step:hover,
+.pipe-step--open {
+  background: color-mix(in oklch, var(--foreground) 6%, transparent);
+}
+
+.pipe-step--added .pipe-step__main {
+  color: var(--muted-foreground);
+}
+
+.pipe-step[data-state='skipped'] .pipe-step__main > span:nth-child(2) {
+  color: var(--muted-foreground);
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in oklch, var(--muted-foreground) 60%, transparent);
+}
+
+.pipe-step[data-state='failure'] {
+  background: color-mix(in oklch, var(--pipe-bad) 12%, transparent);
+}
+
+.pipe-step[data-state='running'] {
+  background: color-mix(in oklch, var(--pipe-run) 14%, transparent);
+}
+
+.pipe-step__main {
+  display: grid;
+  grid-template-columns: 14px 1fr auto;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  height: 100%;
+  padding-inline: 4px;
+  font-size: 11.5px;
+  text-align: start;
+}
+
+.pipe-step__time {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+.pipe-step__bug {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  color: var(--muted-foreground);
+  opacity: 0;
+  transition:
+    opacity 0.15s ease,
+    background 0.15s ease;
+}
+
+.pipe-step:hover .pipe-step__bug,
+.pipe-step__bug:focus-visible,
+.pipe-step__bug[data-on='true'] {
+  opacity: 1;
+}
+
+.pipe-step__bug:hover {
+  background: color-mix(in oklch, var(--pipe-bad) 16%, transparent);
+  color: var(--pipe-bad);
+}
+
+.pipe-step__bug[data-on='true'] {
+  color: white;
+  background: var(--pipe-bad);
+}
+
+/* phones and tablets have no hover: keep the bug in sight, faintly */
+@media (hover: none) {
+  .pipe-step__bug {
+    opacity: 0.55;
+  }
+}
+
+.pipe-step__bar {
+  position: absolute;
+  inset-inline-start: 4px;
+  bottom: 1px;
+  height: 2px;
+  max-width: calc(100% - 8px);
+  border-radius: 2px;
+  background: var(--pipe-run);
+  transition: width 0.12s linear;
+}
+
+.pipe-node__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  height: 20px;
+  padding-inline: 4px;
+  font-size: 10.5px;
+  color: var(--muted-foreground);
+}
+
+/* why a job did not run, pinned to the card's top edge so the card keeps its size */
+.pipe-node__banner {
+  position: absolute;
+  inset-inline: 10px;
+  top: -11px;
+  z-index: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--popover);
+  font-size: 10.5px;
+  color: var(--muted-foreground);
+  box-shadow: var(--shadow-card);
+  text-align: center;
+}
+
+.pipe-approval {
+  position: absolute;
+  inset-inline: 6px;
+  top: 50%;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in oklch, var(--pipe-wait) 50%, var(--border));
+  background: var(--popover);
+  box-shadow: var(--shadow-float);
+  transform: translateY(-50%);
+}
+
+.pipe-approval__yes,
+.pipe-approval__no {
+  flex: 1;
+  height: 28px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  transition: filter 0.15s ease;
+}
+
+.pipe-approval__yes {
+  background: var(--pipe-ok);
+  color: white;
+}
+
+.pipe-approval__no {
+  border: 1px solid var(--border);
+}
+
+.pipe-approval__yes:hover,
+.pipe-approval__no:hover {
+  filter: brightness(1.08);
+}
+
+/* the card's state: lit like a part when current flows through it */
+.pipe-node--running {
+  border-color: color-mix(in oklch, var(--pipe-run) 60%, var(--border));
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, var(--pipe-run) 35%, transparent),
+    0 12px 30px -12px color-mix(in oklch, var(--pipe-run) 65%, transparent);
+}
+
+.pipe-node--queued {
+  border-style: dashed;
+  border-color: color-mix(in oklch, var(--pipe-run) 45%, var(--border));
+}
+
+.pipe-node--waiting {
+  border-color: color-mix(in oklch, var(--pipe-wait) 60%, var(--border));
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, var(--pipe-wait) 35%, transparent),
+    0 12px 30px -12px color-mix(in oklch, var(--pipe-wait) 60%, transparent);
+}
+
+.pipe-node--success {
+  border-color: color-mix(in oklch, var(--pipe-ok) 55%, var(--border));
+}
+
+.pipe-node--failure,
+.pipe-node--not-triggered {
+  border-color: color-mix(in oklch, var(--pipe-bad) 65%, var(--border));
+  box-shadow:
+    0 0 0 1px color-mix(in oklch, var(--pipe-bad) 35%, transparent),
+    0 12px 30px -12px color-mix(in oklch, var(--pipe-bad) 55%, transparent);
+}
+
+.pipe-node--skipped,
+.pipe-node--cancelled {
+  border-style: dashed;
+  opacity: 0.72;
+}
+
+.pipe-node--selected {
+  border-color: var(--primary);
+  box-shadow:
+    0 0 0 3px color-mix(in oklch, var(--primary) 24%, transparent),
+    var(--shadow-float);
+}
+
+/* the wire ends: little screw terminals */
+.pipe-board .pipe-handle {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--terminal-ring);
+  background: radial-gradient(circle at 35% 30%, oklch(0.92 0.06 85), oklch(0.72 0.1 75));
+  cursor: default;
+}
+
+.pipe-wire {
+  transition: stroke 0.3s ease;
+}
+
+.pipe-wire__badge {
+  display: grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  padding-inline: 5px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--popover);
+  box-shadow: var(--shadow-card);
+}
+
+/* a job's outputs riding the wire to the next job */
+.pipe-wire__signal {
+  display: block;
+  max-width: 13rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: color-mix(in oklch, var(--pipe-run) 88%, black);
+  color: black;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  box-shadow: 0 0 12px color-mix(in oklch, var(--pipe-run) 60%, transparent);
+}
+
+/* the bulb's light */
+.pipe-bulb__glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 150px;
+  height: 150px;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.pipe-bulb__glow--flicker {
+  animation: pipe-flicker 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes pipe-flicker {
+  from {
+    opacity: 0.45;
+  }
+  to {
+    opacity: 0.9;
+  }
+}
+
+/* the timeline */
+.pipe-gantt__row {
+  background: color-mix(in oklch, var(--foreground) 4%, transparent);
+}
+
+.pipe-gantt__ghost,
+.pipe-gantt__bar,
+.pipe-gantt__queued,
+.pipe-gantt__wait {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  border-radius: 3px;
+}
+
+.pipe-gantt__ghost {
+  border: 1px dashed color-mix(in oklch, var(--foreground) 22%, transparent);
+}
+
+.pipe-gantt__queued {
+  background: color-mix(in oklch, var(--pipe-idle) 35%, transparent);
+}
+
+.pipe-gantt__wait {
+  background: repeating-linear-gradient(
+    -45deg,
+    color-mix(in oklch, var(--pipe-wait) 45%, transparent) 0 4px,
+    transparent 4px 8px
+  );
+}
+
+.pipe-gantt__wait.pipe-gantt__ghost {
+  background: none;
+  border-color: color-mix(in oklch, var(--pipe-wait) 45%, transparent);
+}
+
+.pipe-gantt__head {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--pipe-run);
+  pointer-events: none;
+}
+
+.pipe-gantt__scrub {
+  background: color-mix(in oklch, var(--foreground) 8%, transparent);
+}
+
+.pipe-gantt__scrub:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pipe-bulb__glow--flicker {
+    animation: none;
+  }
+  .pipe-step__bar {
+    transition: none;
+  }
+}

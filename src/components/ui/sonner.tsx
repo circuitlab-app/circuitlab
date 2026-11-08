@@ -29,6 +29,9 @@ const Toaster = ({ theme = "system", ...props }: ToasterProps) => {
       }}
       style={
         {
+          // sonner sets a system font stack of its own; Persian and Arabic
+          // toasts then fell back to Tahoma/Segoe instead of Vazirmatn
+          fontFamily: "var(--app-font)",
           "--normal-bg": "var(--popover)",
           "--normal-text": "var(--popover-foreground)",
           "--normal-border": "var(--border)",

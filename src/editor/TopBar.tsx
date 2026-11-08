@@ -1,4 +1,4 @@
-import { Ellipsis } from 'lucide-react'
+import { Ellipsis, Workflow } from 'lucide-react'
 import { useState, type ReactNode } from 'react'
 import { LiquidButton } from '@/components/animate-ui/buttons/liquid'
 import { ThemeTogglerButton, ThemeTogglerButtonIcon } from '@/components/animate-ui/buttons/theme-toggler'
@@ -95,7 +95,7 @@ function LanguageItems() {
   )
 }
 
-function LanguageMenu() {
+export function LanguageMenu() {
   const { t, lang } = useI18n()
   const current = LANGUAGES.find((l) => l.code === lang) ?? LANGUAGES[0]
   return (
@@ -119,6 +119,55 @@ function LanguageMenu() {
         <LanguageItems />
       </DropdownMenuContent>
     </DropdownMenu>
+  )
+}
+
+export function ThemeToggle() {
+  const { t } = useI18n()
+  const theme = useSettings((s) => s.theme)
+  const setTheme = useSettings((s) => s.setTheme)
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span>
+          <ThemeTogglerButton
+            theme={theme}
+            resolvedTheme={theme}
+            setTheme={(next) => setTheme(next === 'dark' ? 'dark' : 'light')}
+            modes={['light', 'dark']}
+            variant="ghost"
+            size="default"
+            aria-label={t.toolbar.theme}
+          >
+            <ThemeTogglerButtonIcon light={<Sun size={18} />} dark={<Moon size={18} />} />
+          </ThemeTogglerButton>
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>{t.toolbar.theme}</TooltipContent>
+    </Tooltip>
+  )
+}
+
+export const PIPELINES_HASH = '#/pipelines'
+
+/** Starts loading the Pipeline Lab before it is opened, e.g. when the pointer reaches its button. */
+const preloadPipelines = () => void import('@/pipeline/PipelineLab')
+
+/** Opens the Pipeline Lab: a GitHub Actions workflow simulated like a circuit. */
+function PipelinesButton({ className }: { className?: string }) {
+  const { t } = useI18n()
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <Button variant="ghost" size="lg" className={cn('gap-2 px-2.5 font-medium', className)} asChild>
+          <a href={PIPELINES_HASH} aria-label={t.toolbar.pipelines} onPointerEnter={preloadPipelines} onFocus={preloadPipelines}>
+            <Workflow className="size-[18px]" aria-hidden />
+            <span className="max-xl:hidden">{t.toolbar.pipelines}</span>
+          </a>
+        </Button>
+      </TooltipTrigger>
+      <TooltipContent className="xl:hidden">{t.toolbar.pipelines}</TooltipContent>
+    </Tooltip>
   )
 }
 
@@ -185,6 +234,14 @@ function MoreMenu({ onClear, onHelp, canClear }: { onClear: () => void; onHelp: 
         <DropdownMenuLabel className="text-xs text-muted-foreground">{t.toolbar.language}</DropdownMenuLabel>
         <LanguageItems />
         <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onSelect={() => {
+            window.location.hash = PIPELINES_HASH
+          }}
+        >
+          <Workflow className="size-4" aria-hidden />
+          {t.toolbar.pipelines}
+        </DropdownMenuItem>
         <DropdownMenuItem onSelect={onHelp}>{t.toolbar.help}</DropdownMenuItem>
         <DropdownMenuItem variant="destructive" disabled={!canClear} onSelect={onClear}>
           {t.toolbar.clear}
@@ -196,8 +253,6 @@ function MoreMenu({ onClear, onHelp, canClear }: { onClear: () => void; onHelp: 
 
 export function TopBar() {
   const { t } = useI18n()
-  const theme = useSettings((s) => s.theme)
-  const setTheme = useSettings((s) => s.setTheme)
   const sound = useSettings((s) => s.sound)
   const toggleSound = useSettings((s) => s.toggleSound)
   const canUndo = useCircuit((s) => s.past.length > 0)
@@ -241,6 +296,7 @@ export function TopBar() {
 
       {/* phones open the Toolbox from the bottom dock instead */}
       <ToolboxButton className="max-md:hidden" />
+      <PipelinesButton className="max-md:hidden" />
 
       <ToolButton label={t.toolbar.undo} onClick={undo} disabled={!canUndo}>
         <Undo2 size={18} animateOnHover />
@@ -270,24 +326,7 @@ export function TopBar() {
             {sound ? <Volume2 size={18} animateOnHover /> : <VolumeX size={18} animateOnHover />}
           </ToolButton>
           <LanguageMenu />
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span>
-                <ThemeTogglerButton
-                  theme={theme}
-                  resolvedTheme={theme}
-                  setTheme={(next) => setTheme(next === 'dark' ? 'dark' : 'light')}
-                  modes={['light', 'dark']}
-                  variant="ghost"
-                  size="default"
-                  aria-label={t.toolbar.theme}
-                >
-                  <ThemeTogglerButtonIcon light={<Sun size={18} />} dark={<Moon size={18} />} />
-                </ThemeTogglerButton>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>{t.toolbar.theme}</TooltipContent>
-          </Tooltip>
+          <ThemeToggle />
           <HelpDialog />
         </div>
         <MoreMenu
