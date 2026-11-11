@@ -1,4 +1,4 @@
-import { ChevronDown, RadioTower, Workflow, Zap, type LucideIcon } from 'lucide-react'
+import { ChevronDown, Droplets, RadioTower, Workflow, Zap, type LucideIcon } from 'lucide-react'
 import { BrandLogo } from '@/components/BrandLogo'
 import {
   DropdownMenu,
@@ -13,29 +13,33 @@ import { cn } from '@/lib/utils'
 
 /*
  * The site's logo and name are a menu of its labs: the circuit board, the
+ * Power Lab (grid, AC, safety), the Hydraulics Lab (water and oil under pressure), the
  * Telecom Lab (phones, towers, 2G–5G) and the Pipeline Lab (GitHub Actions
  * simulated like a circuit). Each lab is a page in the address bar, so the
  * menu only changes the address.
  */
 
-export type Lab = 'board' | 'power' | 'telecom' | 'pipelines'
+export type Lab = 'board' | 'power' | 'hydraulics' | 'telecom' | 'pipelines'
 
 export const POWER_HASH = '#/power'
+export const HYDRAULICS_HASH = '#/hydraulics'
 export const TELECOM_HASH = '#/telecom'
 export const PIPELINES_HASH = '#/pipelines'
 
-const ADDRESS: Record<Lab, string> = { board: '#/', power: POWER_HASH, telecom: TELECOM_HASH, pipelines: PIPELINES_HASH }
-const LABS: Lab[] = ['board', 'power', 'telecom', 'pipelines']
+const ADDRESS: Record<Lab, string> = { board: '#/', power: POWER_HASH, hydraulics: HYDRAULICS_HASH, telecom: TELECOM_HASH, pipelines: PIPELINES_HASH }
+const LABS: Lab[] = ['board', 'power', 'hydraulics', 'telecom', 'pipelines']
 
 /** Starts loading the other labs before one is picked, e.g. when the pointer reaches the menu. */
 const preload = () => {
   void import('@/power/PowerLab')
+  void import('@/hydraulics/HydraulicsLab')
   void import('@/telecom/TelecomLab')
   void import('@/pipeline/PipelineLab')
 }
 
 const MARKS: Record<Exclude<Lab, 'board'>, { icon: LucideIcon; color: string }> = {
   power: { icon: Zap, color: 'oklch(0.68 0.17 60)' },
+  hydraulics: { icon: Droplets, color: 'oklch(0.62 0.14 215)' },
   telecom: { icon: RadioTower, color: 'oklch(0.55 0.17 250)' },
   pipelines: { icon: Workflow, color: 'var(--primary)' },
 }
@@ -51,10 +55,11 @@ function LabMark({ lab, className }: { lab: Exclude<Lab, 'board'>; className?: s
 
 export function LabSwitcher({ current }: { current: Lab }) {
   const { t } = useI18n()
-  const name: Record<Lab, string> = { board: t.app.title, power: t.toolbar.power, telecom: t.toolbar.telecom, pipelines: t.toolbar.pipelines }
+  const name: Record<Lab, string> = { board: t.app.title, power: t.toolbar.power, hydraulics: t.toolbar.hydraulics, telecom: t.toolbar.telecom, pipelines: t.toolbar.pipelines }
   const hint: Record<Lab, string> = {
     board: t.app.subtitle,
     power: t.toolbar.powerHint,
+    hydraulics: t.toolbar.hydraulicsHint,
     telecom: t.toolbar.telecomHint,
     pipelines: t.toolbar.pipelinesHint,
   }

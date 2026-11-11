@@ -8,7 +8,7 @@ import { InspectorPanel } from '@/editor/Inspector'
 import { MobileDock } from '@/editor/MobileDock'
 import { PartsSidebar } from '@/editor/PartsSidebar'
 import { StatusBar } from '@/editor/StatusBar'
-import { PIPELINES_HASH, POWER_HASH, TELECOM_HASH } from '@/editor/LabSwitcher'
+import { HYDRAULICS_HASH, PIPELINES_HASH, POWER_HASH, TELECOM_HASH } from '@/editor/LabSwitcher'
 import { TopBar } from '@/editor/TopBar'
 import { Workspace } from '@/editor/Workspace'
 import { useShortcuts } from '@/hooks/useShortcuts'
@@ -21,10 +21,11 @@ import { useSettings } from '@/store/settings'
 const PipelineLab = lazy(() => import('@/pipeline/PipelineLab'))
 const TelecomLab = lazy(() => import('@/telecom/TelecomLab'))
 const PowerLab = lazy(() => import('@/power/PowerLab'))
+const HydraulicsLab = lazy(() => import('@/hydraulics/HydraulicsLab'))
 
-type Page = 'board' | 'power' | 'telecom' | 'pipelines'
+type Page = 'board' | 'power' | 'hydraulics' | 'telecom' | 'pipelines'
 
-/** The page in the address: `#/power`, `#/telecom` and `#/pipelines` are the labs, anything else the circuit board. */
+/** The page in the address: `#/power`, `#/hydraulics`, `#/telecom` and `#/pipelines` are the labs, anything else the circuit board. */
 function usePage(): Page {
   const hash = useSyncExternalStore(
     (onChange) => {
@@ -34,7 +35,7 @@ function usePage(): Page {
     () => window.location.hash,
     () => '',
   )
-  return hash.startsWith(PIPELINES_HASH) ? 'pipelines' : hash.startsWith(TELECOM_HASH) ? 'telecom' : hash.startsWith(POWER_HASH) ? 'power' : 'board'
+  return hash.startsWith(PIPELINES_HASH) ? 'pipelines' : hash.startsWith(TELECOM_HASH) ? 'telecom' : hash.startsWith(POWER_HASH) ? 'power' : hash.startsWith(HYDRAULICS_HASH) ? 'hydraulics' : 'board'
 }
 
 /** The circuit board, with the solver and the keyboard shortcuts that only make sense on it. */
@@ -64,7 +65,7 @@ export default function App() {
   const { t, dir } = useI18n()
   const theme = useSettings((s) => s.theme)
   const page = usePage()
-  useDocumentLanguage(page === 'pipelines' ? t.toolbar.pipelines : page === 'telecom' ? t.toolbar.telecom : page === 'power' ? t.toolbar.power : undefined)
+  useDocumentLanguage(page === 'pipelines' ? t.toolbar.pipelines : page === 'telecom' ? t.toolbar.telecom : page === 'power' ? t.toolbar.power : page === 'hydraulics' ? t.toolbar.hydraulics : undefined)
 
   useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark')
@@ -84,7 +85,7 @@ export default function App() {
           <CircuitBoard />
         ) : (
           <Suspense fallback={<div className="h-dvh bg-background" />}>
-            {page === 'pipelines' ? <PipelineLab /> : page === 'power' ? <PowerLab /> : <TelecomLab />}
+            {page === 'pipelines' ? <PipelineLab /> : page === 'power' ? <PowerLab /> : page === 'hydraulics' ? <HydraulicsLab /> : <TelecomLab />}
           </Suspense>
         )}
         <Toaster position="bottom-center" richColors dir={dir} theme={theme} />

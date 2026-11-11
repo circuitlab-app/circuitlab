@@ -101,6 +101,17 @@ How a phone call travels: landline, 2G to 5G and direct radio. It sits in the la
 
 The radio model (`radio.ts`) is for teaching: the 3GPP urban path-loss formula, a loss per wall that grows with frequency, and one sensitivity per technology. Words live in `src/i18n/telecom/`; the engine is tested in `src/telecom/telecom.test.ts`.
 
+## Hydraulics Lab (`#/hydraulics`)
+
+Water and oil under pressure, in four sections (`src/hydraulics/`):
+
+- **Water at home** (`Home.tsx`): a four-storey building on one main pipe, fed by the city main, a roof tank or a booster pump. Every outlet is a switch; `homeWater` builds the pipe network and `solveNet` solves it (nodal heads, h = k·Q², pumps with a curve and a check valve), so opening one tap weakens the others.
+- **Laws of fluids** (`Basics.tsx`): eleven cards on the shared `LabCard`: pressure and depth, Pascal's jack, buoyancy, continuity, Bernoulli, Torricelli, Reynolds, pipe friction, the siphon, water hammer and the water–electricity analogy.
+- **Hydraulic machines** (`Machines.tsx`): a car lift (pump, relief valve, control valve, cylinder) and car brakes.
+- **Water tower and town** (`City.tsx`): `towerDay` runs a day of use, pumping and tower level, and the pressure at three houses on a slope.
+
+All physics is in `model.ts` as pure functions, tested in `model.test.ts`. Words live in `src/i18n/hydraulics/`.
+
 ## Pipeline Lab (`#/pipelines`)
 
 A second page that shows how a GitHub Actions workflow runs, drawn as a circuit: the event is the battery, jobs are parts, `needs:` are the wires and the run result is a bulb. The site's logo and name are a menu of the labs (`src/editor/LabSwitcher.tsx`, on every page). The page is its own lazy chunk, with the `yaml` parser in a chunk of its own, so the board never loads it.
@@ -124,6 +135,7 @@ src/
   editor/       board, part nodes, wires, sidebar, inspector, lessons, gallery, top/status bars
   displays/     screen faces (digits, LCD, OLED, TFT, LED walls, oscilloscope)
   toolbox/      the workshop tools section
+  hydraulics/   the Hydraulics Lab: home plumbing, laws of fluids, machines, water tower (#/hydraulics)
   telecom/      the Telecom Lab: phone calls, modulation, towers and 2G–5G (#/telecom)
   pipeline/     the Pipeline Lab: GitHub Actions workflows simulated like circuits (#/pipelines)
   three/        shared canvas, lighting helpers and the 3D part models

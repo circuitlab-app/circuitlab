@@ -84,6 +84,9 @@ export type Dictionary = {
     /** the Power Lab page: from power plant to socket */
     power: string
     powerHint: string
+    /** the Hydraulics Lab page: water and oil under pressure */
+    hydraulics: string
+    hydraulicsHint: string
   }
   confirm: {
     clearTitle: string
@@ -1100,6 +1103,8 @@ export const en: Dictionary = {
     telecomHint: 'How phones, towers and 2G to 5G carry your voice',
     power: 'Power Lab',
     powerHint: 'From power plant to socket: the grid, AC and safety',
+    hydraulics: 'Hydraulics Lab',
+    hydraulicsHint: 'Water at home, the laws of fluids, jacks, brakes and water towers',
   },
   confirm: {
     clearTitle: 'Clear the board?',

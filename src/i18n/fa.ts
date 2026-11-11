@@ -675,6 +675,8 @@ export const fa: Dictionary = {
     telecomHint: 'تلفن، موبایل، دکل‌ها و 2G تا 5G چطور صدای شما را می‌برند',
     power: 'آزمایشگاه برق قدرت',
     powerHint: 'از نیروگاه تا پریز: شبکه، برق متناوب و ایمنی',
+    hydraulics: 'آزمایشگاه هیدرولیک',
+    hydraulicsHint: 'آب خانه، قانون‌های سیالات، جک، ترمز و برج آب',
   },
   confirm: {
     clearTitle: 'میز کار پاک شود؟',
